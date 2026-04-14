@@ -1,0 +1,38 @@
+Système de Gestion des Missions
+Création d'une mission
+Fait moi une application web (react, node ) pour la gestion des mission à l’interieur pour les agents de la somelec 
+L’application permet à l’utilisateur de créer une mission : Titre de la mission , decrit l’expression de besoin , decrit le plan d’action ,  date debut date fin , trajet , case a coché si il veut du carburant , si il veut des vehicules et le nombre , puis il choisi dans une liste les employé qui vont dans cette mission (nom,fonction,matricule ou NNI)
+Une fois l’utlisateur créer sa mission son responsable hierarchique est notifié  la hierrachie est la suivante ( employé , dircteur ,directeur centrale )  donc un employé simple sa mission doit etre validé par par son directeur puis par le directeur centrale , si c’est un directeur qui cree la mission elle vas etre validé par le directeur centrale 
+
+Une fois la mission est validé au niveau d’une direction centrale , elle rentre dans un circuit de validation administratif , le Contrôle technique est notifié , une fois validé par le contrôle technique elle passe au DGA , une fois validé par le DGA , on demande au DMG (Moyens genereaux de valider en ajoutant les vehicules de la mission) une fois valide par le DMG on peut generer l’ordre de mission cet ordre peut etre generer par un seul utlisateur CAD (attaché a la direction generale)  , le CAD donne aussi les frais de mission aux employé et valide , 
+Le calcul des frais est le suivant : 
+
+Les frais de mission sont calculés sur la base d'un taux journalier en MRU (Ouguiya mauritanienne), qui varie selon deux critères : la catégorie de l'agent et la durée de la mission.
+________________________________________
+Barème pour les DG/DGA
+Taux unique quelle que soit la durée, à condition que la mission soit inférieure ou égale à 15 jours :
+Catégorie	Taux journalier
+DG / DGA	2 500 MRU/jour
+________________________________________
+Barème dégressif pour les autres catégories
+Catégorie	≤ 5 jours	6 à 10 jours	11 à 15 jours
+Directeurs / Assimilés	3 000 MRU/jour	1 500 MRU/jour	900 MRU/jour
+Chefs Dépt / Service	2 000 MRU/jour	1 000 MRU/jour	600 MRU/jour
+Autres cadres	1 500 MRU/jour	750 MRU/jour	450 MRU/jour
+Agents et autres	1 000 MRU/jour	500 MRU/jour	300 MRU/jour
+Le barème est dégressif : plus la mission est longue, plus le taux journalier diminue.
+________________________________________
+Modalités de paiement
+
+Le CAD paie seulement 70% pour chaque employé ,
+
+Une fois qu’il valide , une demande de validation est envoyé au contrôle financier 
+Si le contrôle financier valide , une notification est envoyé au DRH pour demandé de payé le reste 30%
+
+Une direction ne peut voire que ces missions , mais les validateur peuvent voir toute les mission 
+
+Avec des tableaux paginé et des filtre
+
+Aussi une interface administrateur qui permet de créer des direction affecter les utlisateur a leur direction le niveau de validation , et aussi ajouter les employé avec leur tarif de frais de mission 
+
+Fais moi une application qui peut facilement ce mettre sur doker et deployé sur un serveur avec une base de donnée postgress

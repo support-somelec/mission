@@ -3,20 +3,34 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: SOMELEC Mission Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: missions
+    description: Mission management
+  - name: employees
+    description: Employee management
+  - name: departments
+    description: Department management
+  - name: users
+    description: User management
+  - name: validations
+    description: Mission validation operations
+  - name: dashboard
+    description: Dashboard and statistics
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +38,708 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: User login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: User logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get current authenticated user
+      responses:
+        "200":
+          description: Current user info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /departments:
+    get:
+      operationId: listDepartments
+      tags: [departments]
+      summary: List all departments
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of departments
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DepartmentListResponse"
+    post:
+      operationId: createDepartment
+      tags: [departments]
+      summary: Create a new department
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDepartmentBody"
+      responses:
+        "201":
+          description: Department created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+
+  /departments/{id}:
+    get:
+      operationId: getDepartment
+      tags: [departments]
+      summary: Get a department by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Department found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateDepartment
+      tags: [departments]
+      summary: Update a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDepartmentBody"
+      responses:
+        "200":
+          description: Department updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Department"
+    delete:
+      operationId: deleteDepartment
+      tags: [departments]
+      summary: Delete a department
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List all employees
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: departmentId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: category
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeListResponse"
+    post:
+      operationId: createEmployee
+      tags: [employees]
+      summary: Create a new employee
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateEmployeeBody"
+      responses:
+        "201":
+          description: Employee created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+
+  /employees/{id}:
+    get:
+      operationId: getEmployee
+      tags: [employees]
+      summary: Get employee by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Employee found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateEmployee
+      tags: [employees]
+      summary: Update an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateEmployeeBody"
+      responses:
+        "200":
+          description: Employee updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Employee"
+    delete:
+      operationId: deleteEmployee
+      tags: [employees]
+      summary: Delete an employee
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /users:
+    get:
+      operationId: listUsers
+      tags: [users]
+      summary: List all users
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: departmentId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: role
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+
+  /users/{id}:
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get user by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserBody"
+      responses:
+        "200":
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+    delete:
+      operationId: deleteUser
+      tags: [users]
+      summary: Delete a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /missions:
+    get:
+      operationId: listMissions
+      tags: [missions]
+      summary: List missions (scoped by user role)
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: status
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: departmentId
+          in: query
+          schema:
+            type: ["integer", "null"]
+        - name: startDateFrom
+          in: query
+          schema:
+            type: ["string", "null"]
+        - name: startDateTo
+          in: query
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of missions
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionListResponse"
+    post:
+      operationId: createMission
+      tags: [missions]
+      summary: Create a new mission
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMissionBody"
+      responses:
+        "201":
+          description: Mission created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+
+  /missions/{id}:
+    get:
+      operationId: getMission
+      tags: [missions]
+      summary: Get mission by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMission
+      tags: [missions]
+      summary: Update a mission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMissionBody"
+      responses:
+        "200":
+          description: Mission updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+    delete:
+      operationId: deleteMission
+      tags: [missions]
+      summary: Delete a mission (only if draft)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /missions/{id}/validate:
+    post:
+      operationId: validateMission
+      tags: [validations]
+      summary: Validate or reject a mission at current stage
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ValidateMissionBody"
+      responses:
+        "200":
+          description: Mission validated/rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+
+  /missions/{id}/assign-vehicles:
+    post:
+      operationId: assignVehicles
+      tags: [missions]
+      summary: DMG assigns vehicles to a mission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssignVehiclesBody"
+      responses:
+        "200":
+          description: Vehicles assigned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+
+  /missions/{id}/generate-order:
+    post:
+      operationId: generateMissionOrder
+      tags: [missions]
+      summary: Generate mission order (CAD only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission order generated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionOrder"
+
+  /missions/{id}/order:
+    get:
+      operationId: getMissionOrder
+      tags: [missions]
+      summary: Get mission order details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionOrder"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /missions/{id}/employees:
+    get:
+      operationId: getMissionEmployees
+      tags: [missions]
+      summary: Get employees assigned to a mission with fee calculations
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission employees with fees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MissionEmployeeFee"
+
+  /missions/{id}/validations:
+    get:
+      operationId: getMissionValidations
+      tags: [validations]
+      summary: Get validation history for a mission
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Validation history
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ValidationStep"
+
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard statistics
+      responses:
+        "200":
+          description: Dashboard stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/pending-validations:
+    get:
+      operationId: getPendingValidations
+      tags: [dashboard]
+      summary: Get missions pending validation for current user
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 10
+      responses:
+        "200":
+          description: Pending validations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MissionListResponse"
+
+  /dashboard/recent-missions:
+    get:
+      operationId: getRecentMissions
+      tags: [dashboard]
+      summary: Get recent missions for current user context
+      responses:
+        "200":
+          description: Recent missions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Mission"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +750,725 @@ components:
       required:
         - status
 
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+      required:
+        - success
+
+    LoginBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+      required:
+        - username
+        - password
+
+    AuthResponse:
+      type: object
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+        message:
+          type: string
+      required:
+        - user
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+          enum:
+            - admin
+            - employee
+            - director
+            - central_director
+            - technical_control
+            - dga
+            - dmg
+            - cad
+            - financial_control
+            - drh
+        departmentId:
+          type: ["integer", "null"]
+        departmentName:
+          type: ["string", "null"]
+        employeeId:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - username
+        - fullName
+        - role
+        - createdAt
+
+    CreateUserBody:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string
+        fullName:
+          type: string
+        email:
+          type: ["string", "null"]
+        role:
+          type: string
+        departmentId:
+          type: ["integer", "null"]
+        employeeId:
+          type: ["integer", "null"]
+      required:
+        - username
+        - password
+        - fullName
+        - role
+
+    UpdateUserBody:
+      type: object
+      properties:
+        fullName:
+          type: ["string", "null"]
+        email:
+          type: ["string", "null"]
+        role:
+          type: ["string", "null"]
+        departmentId:
+          type: ["integer", "null"]
+        employeeId:
+          type: ["integer", "null"]
+        password:
+          type: ["string", "null"]
+
+    UserListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    Department:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+          enum:
+            - direction
+            - central_direction
+            - service
+        parentId:
+          type: ["integer", "null"]
+        parentName:
+          type: ["string", "null"]
+        userCount:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - code
+        - type
+        - createdAt
+
+    CreateDepartmentBody:
+      type: object
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        type:
+          type: string
+        parentId:
+          type: ["integer", "null"]
+      required:
+        - name
+        - code
+        - type
+
+    UpdateDepartmentBody:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        code:
+          type: ["string", "null"]
+        type:
+          type: ["string", "null"]
+        parentId:
+          type: ["integer", "null"]
+
+    DepartmentListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Department"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        matricule:
+          type: string
+        nni:
+          type: ["string", "null"]
+        position:
+          type: string
+        category:
+          type: string
+          enum:
+            - dg_dga
+            - director
+            - chef_department
+            - other_cadre
+            - agent
+        departmentId:
+          type: ["integer", "null"]
+        departmentName:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - firstName
+        - lastName
+        - fullName
+        - matricule
+        - position
+        - category
+        - createdAt
+
+    CreateEmployeeBody:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        matricule:
+          type: string
+        nni:
+          type: ["string", "null"]
+        position:
+          type: string
+        category:
+          type: string
+        departmentId:
+          type: ["integer", "null"]
+      required:
+        - firstName
+        - lastName
+        - matricule
+        - position
+        - category
+
+    UpdateEmployeeBody:
+      type: object
+      properties:
+        firstName:
+          type: ["string", "null"]
+        lastName:
+          type: ["string", "null"]
+        matricule:
+          type: ["string", "null"]
+        nni:
+          type: ["string", "null"]
+        position:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        departmentId:
+          type: ["integer", "null"]
+
+    EmployeeListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Employee"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    Mission:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        needsExpression:
+          type: string
+        actionPlan:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        destination:
+          type: string
+        requiresFuel:
+          type: boolean
+        requiresVehicle:
+          type: boolean
+        vehicleCount:
+          type: integer
+        vehicleDetails:
+          type: ["string", "null"]
+        status:
+          type: string
+          enum:
+            - draft
+            - pending_director
+            - pending_central_director
+            - pending_technical_control
+            - pending_dga
+            - pending_dmg
+            - pending_cad
+            - pending_financial_control
+            - pending_drh
+            - approved
+            - rejected
+        currentValidationRole:
+          type: ["string", "null"]
+        createdByUserId:
+          type: integer
+        createdByName:
+          type: string
+        departmentId:
+          type: ["integer", "null"]
+        departmentName:
+          type: ["string", "null"]
+        orderNumber:
+          type: ["string", "null"]
+        orderGeneratedAt:
+          type: ["string", "null"]
+        totalFees:
+          type: ["number", "null"]
+        paidAmount:
+          type: ["number", "null"]
+        remainingAmount:
+          type: ["number", "null"]
+        durationDays:
+          type: integer
+        employeeCount:
+          type: integer
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionEmployeeSummary"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - title
+        - needsExpression
+        - actionPlan
+        - startDate
+        - endDate
+        - destination
+        - requiresFuel
+        - requiresVehicle
+        - vehicleCount
+        - status
+        - createdByUserId
+        - createdByName
+        - durationDays
+        - employeeCount
+        - employees
+        - createdAt
+        - updatedAt
+
+    MissionEmployeeSummary:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        fullName:
+          type: string
+        matricule:
+          type: string
+        position:
+          type: string
+        category:
+          type: string
+      required:
+        - employeeId
+        - fullName
+        - matricule
+        - position
+        - category
+
+    MissionEmployeeFee:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        fullName:
+          type: string
+        matricule:
+          type: string
+        nni:
+          type: ["string", "null"]
+        position:
+          type: string
+        category:
+          type: string
+        dailyRate:
+          type: number
+        durationDays:
+          type: integer
+        totalFee:
+          type: number
+        paidAmount:
+          type: number
+        remainingAmount:
+          type: number
+      required:
+        - employeeId
+        - fullName
+        - matricule
+        - position
+        - category
+        - dailyRate
+        - durationDays
+        - totalFee
+        - paidAmount
+        - remainingAmount
+
+    CreateMissionBody:
+      type: object
+      properties:
+        title:
+          type: string
+        needsExpression:
+          type: string
+        actionPlan:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        destination:
+          type: string
+        requiresFuel:
+          type: boolean
+        requiresVehicle:
+          type: boolean
+        vehicleCount:
+          type: integer
+        employeeIds:
+          type: array
+          items:
+            type: integer
+      required:
+        - title
+        - needsExpression
+        - actionPlan
+        - startDate
+        - endDate
+        - destination
+        - requiresFuel
+        - requiresVehicle
+        - vehicleCount
+        - employeeIds
+
+    UpdateMissionBody:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        needsExpression:
+          type: ["string", "null"]
+        actionPlan:
+          type: ["string", "null"]
+        startDate:
+          type: ["string", "null"]
+        endDate:
+          type: ["string", "null"]
+        destination:
+          type: ["string", "null"]
+        requiresFuel:
+          type: ["boolean", "null"]
+        requiresVehicle:
+          type: ["boolean", "null"]
+        vehicleCount:
+          type: ["integer", "null"]
+        employeeIds:
+          type: array
+          items:
+            type: integer
+
+    ValidateMissionBody:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+            - approve
+            - reject
+        comment:
+          type: ["string", "null"]
+      required:
+        - action
+
+    AssignVehiclesBody:
+      type: object
+      properties:
+        vehicleDetails:
+          type: string
+        vehicleCount:
+          type: integer
+      required:
+        - vehicleDetails
+        - vehicleCount
+
+    MissionListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/Mission"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+        totalPages:
+          type: integer
+      required:
+        - data
+        - total
+        - page
+        - limit
+        - totalPages
+
+    ValidationStep:
+      type: object
+      properties:
+        id:
+          type: integer
+        missionId:
+          type: integer
+        validatorUserId:
+          type: integer
+        validatorName:
+          type: string
+        validatorRole:
+          type: string
+        action:
+          type: string
+        comment:
+          type: ["string", "null"]
+        fromStatus:
+          type: string
+        toStatus:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - missionId
+        - validatorUserId
+        - validatorName
+        - validatorRole
+        - action
+        - fromStatus
+        - toStatus
+        - createdAt
+
+    MissionOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        missionId:
+          type: integer
+        orderNumber:
+          type: string
+        missionTitle:
+          type: string
+        departmentName:
+          type: ["string", "null"]
+        destination:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        durationDays:
+          type: integer
+        requiresFuel:
+          type: boolean
+        requiresVehicle:
+          type: boolean
+        vehicleCount:
+          type: integer
+        vehicleDetails:
+          type: ["string", "null"]
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionEmployeeFee"
+        totalFees:
+          type: number
+        paidAmount:
+          type: number
+        remainingAmount:
+          type: number
+        generatedAt:
+          type: string
+        generatedByName:
+          type: string
+      required:
+        - id
+        - missionId
+        - orderNumber
+        - missionTitle
+        - destination
+        - startDate
+        - endDate
+        - durationDays
+        - requiresFuel
+        - requiresVehicle
+        - vehicleCount
+        - employees
+        - totalFees
+        - paidAmount
+        - remainingAmount
+        - generatedAt
+        - generatedByName
+
+    DashboardStats:
+      type: object
+      properties:
+        totalMissions:
+          type: integer
+        pendingValidations:
+          type: integer
+        approvedMissions:
+          type: integer
+        rejectedMissions:
+          type: integer
+        totalEmployees:
+          type: integer
+        totalDepartments:
+          type: integer
+        missionsByStatus:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
+        recentActivity:
+          type: integer
+      required:
+        - totalMissions
+        - pendingValidations
+        - approvedMissions
+        - rejectedMissions
+        - totalEmployees
+        - totalDepartments
+        - missionsByStatus
+        - recentActivity
+
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+        label:
+          type: string
+      required:
+        - status
+        - count
+        - label
