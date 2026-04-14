@@ -415,9 +415,38 @@ router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Prom
     return;
   }
 
+  const fromStatus = mission.status as MissionStatus;
+
+  // Advance the mission to the next stage after DMG assigns vehicles
+  const toStatus: MissionStatus = mission.status === "pending_dmg"
+    ? getNextStatus("pending_dmg")
+    : (mission.status as MissionStatus);
+
   await db.update(missionsTable)
-    .set({ vehicleDetails: parsed.data.vehicleDetails, vehicleCount: parsed.data.vehicleCount })
+    .set({
+      vehicleDetails: parsed.data.vehicleDetails,
+      vehicleCount: parsed.data.vehicleCount,
+      status: toStatus,
+      currentValidationRole: toStatus !== "approved" && toStatus !== "rejected"
+        ? toStatus.replace("pending_", "")
+        : null,
+    })
     .where(eq(missionsTable.id, params.data.id));
+
+  // Record a validation entry for audit trail
+  if (mission.status === "pending_dmg") {
+    await db.insert(missionValidationsTable).values({
+      missionId: mission.id,
+      validatorUserId: req.userId!,
+      validatorRole: "dmg",
+      action: "approve",
+      comment: parsed.data.vehicleDetails
+        ? `Véhicules affectés : ${parsed.data.vehicleDetails}`
+        : "Véhicules affectés",
+      fromStatus,
+      toStatus,
+    });
+  }
 
   const detail = await getMissionWithDetails(params.data.id, req.userId!, req.userRole!, req.userDepartmentId);
   res.json(detail);

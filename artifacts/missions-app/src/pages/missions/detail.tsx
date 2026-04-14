@@ -154,7 +154,7 @@ export default function MissionDetail() {
   const isDMG = user?.role === "dmg";
   const isCAD = user?.role === "cad";
   
-  const canAssignVehicles = isCurrentValidator && isDMG && mission.requiresVehicle;
+  const canAssignVehicles = isCurrentValidator && isDMG;
   const canGenerateOrder = isCurrentValidator && isCAD && !mission.orderNumber;
 
   const handleValidate = () => {
@@ -286,43 +286,60 @@ export default function MissionDetail() {
             <Dialog open={isAssignVehicleDialogOpen} onOpenChange={setIsAssignVehicleDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                  <CarFront className="w-4 h-4 mr-2" /> Assigner Véhicules & Valider
+                  <CarFront className="w-4 h-4 mr-2" />
+                  {mission.requiresVehicle ? "Affecter Véhicules & Valider" : "Valider (DMG)"}
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Assignation des véhicules (DMG)</DialogTitle>
+                  <DialogTitle>Validation DMG</DialogTitle>
                   <DialogDescription>
-                    La mission demande {mission.vehicleCount} véhicule(s). Précisez les détails.
+                    {mission.requiresVehicle
+                      ? `La mission demande ${mission.vehicleCount} véhicule(s). Précisez les détails avant de valider.`
+                      : "Aucun véhicule demandé pour cette mission. Confirmez votre validation."}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Nombre de véhicules accordés</label>
-                    <Input 
-                      type="number" 
-                      min="1" 
-                      value={vehicleCount}
-                      onChange={(e) => setVehicleCount(parseInt(e.target.value, 10))}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Détails (Plaques, chauffeurs...)</label>
-                    <Textarea 
-                      placeholder="Ex: SG 1234, SG 5678 avec chauffeurs..." 
-                      value={vehicleDetails}
-                      onChange={(e) => setVehicleDetails(e.target.value)}
-                    />
-                  </div>
+                  {mission.requiresVehicle && (
+                    <>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Nombre de véhicules accordés</label>
+                        <Input 
+                          type="number" 
+                          min="1" 
+                          value={vehicleCount}
+                          onChange={(e) => setVehicleCount(parseInt(e.target.value, 10))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Détails (Plaques, chauffeurs...)</label>
+                        <Textarea 
+                          placeholder="Ex: SG 1234, SG 5678 avec chauffeurs..." 
+                          value={vehicleDetails}
+                          onChange={(e) => setVehicleDetails(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+                  {!mission.requiresVehicle && (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Commentaire (optionnel)</label>
+                      <Textarea 
+                        placeholder="Commentaire DMG..." 
+                        value={vehicleDetails}
+                        onChange={(e) => setVehicleDetails(e.target.value)}
+                      />
+                    </div>
+                  )}
                 </div>
                 <DialogFooter>
                   <Button variant="outline" onClick={() => setIsAssignVehicleDialogOpen(false)}>Annuler</Button>
                   <Button 
                     className="bg-emerald-600 hover:bg-emerald-700 text-white" 
                     onClick={handleAssignVehicles}
-                    disabled={assignVehiclesMutation.isPending || !vehicleDetails.trim()}
+                    disabled={assignVehiclesMutation.isPending || (mission.requiresVehicle && !vehicleDetails.trim())}
                   >
-                    Confirmer
+                    {assignVehiclesMutation.isPending ? "Traitement..." : "Confirmer & Transmettre au CAD"}
                   </Button>
                 </DialogFooter>
               </DialogContent>
