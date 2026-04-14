@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, sql, and } from "drizzle-orm";
+import { eq, ilike, sql, and, inArray } from "drizzle-orm";
 import { db, employeesTable, departmentsTable } from "@workspace/db";
 import {
   CreateEmployeeBody,
@@ -70,7 +70,7 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
   const depts = deptIds.length > 0
     ? await db.select({ id: departmentsTable.id, name: departmentsTable.name })
         .from(departmentsTable)
-        .where(sql`${departmentsTable.id} = ANY(${deptIds})`)
+        .where(inArray(departmentsTable.id, deptIds))
     : [];
   const deptMap = new Map(depts.map(d => [d.id, d.name]));
 
