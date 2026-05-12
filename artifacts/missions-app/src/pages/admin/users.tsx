@@ -92,7 +92,7 @@ export default function AdminUsers() {
     role: roleFilter !== "all" ? roleFilter : undefined,
   });
 
-  const { data: deptsData } = useListDepartments({});
+  const { data: deptsData } = useListDepartments({ limit: 100 });
 
   const createMutation = useCreateUser({
     mutation: {

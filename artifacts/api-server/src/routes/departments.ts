@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, sql, and } from "drizzle-orm";
+import { eq, ilike, sql, and, inArray } from "drizzle-orm";
 import { db, departmentsTable, usersTable } from "@workspace/db";
 import {
   CreateDepartmentBody,
@@ -46,7 +46,7 @@ router.get("/departments", requireAuth, async (req, res): Promise<void> => {
   const parents = parentIds.length > 0
     ? await db.select({ id: departmentsTable.id, name: departmentsTable.name })
         .from(departmentsTable)
-        .where(sql`${departmentsTable.id} = ANY(${parentIds})`)
+        .where(inArray(departmentsTable.id, parentIds))
     : [];
 
   const parentMap = new Map(parents.map(p => [p.id, p.name]));

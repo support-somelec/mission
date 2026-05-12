@@ -94,7 +94,7 @@ export default function AdminEmployees() {
     category: categoryFilter !== "all" ? categoryFilter : undefined,
   });
 
-  const { data: deptsData } = useListDepartments({});
+  const { data: deptsData } = useListDepartments({ limit: 100 });
 
   const createMutation = useCreateEmployee({
     mutation: {
