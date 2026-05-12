@@ -68,7 +68,7 @@ export default function Login() {
     <div className="min-h-screen w-full flex bg-gray-50">
       {/* Left pane */}
       <div className="hidden lg:flex flex-1 flex-col bg-primary text-primary-foreground p-12 justify-between relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center" />
+        <div className="absolute inset-0 opacity-20 bg-[url('/bg-somelec.jpg')] bg-cover bg-center" />
         <div className="relative z-10 flex items-center gap-3">
           <img src={logoSomelec} alt="Logo Groupe Somelec" className="w-12 h-12 object-contain invert" />
           <h1 className="text-3xl font-bold tracking-tight">Groupe Somelec</h1>
