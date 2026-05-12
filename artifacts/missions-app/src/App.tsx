@@ -11,6 +11,7 @@ import MissionsList from "@/pages/missions/index";
 import MissionNew from "@/pages/missions/new";
 import MissionDetail from "@/pages/missions/detail";
 import MissionOrderPrint from "@/pages/missions/order";
+import MissionPaymentReceipt from "@/pages/missions/payment-receipt";
 import EmployeesList from "@/pages/employees/index";
 import AdminDepartments from "@/pages/admin/departments";
 import AdminEmployees from "@/pages/admin/employees";
@@ -65,6 +66,10 @@ function AppRouter() {
 
       <Route path="/missions/:id/order">
         {() => <ProtectedRoute component={MissionOrderPrint} />}
+      </Route>
+
+      <Route path="/missions/:id/payment-receipt">
+        {() => <ProtectedRoute component={MissionPaymentReceipt} />}
       </Route>
 
       <Route path="/missions/:id">

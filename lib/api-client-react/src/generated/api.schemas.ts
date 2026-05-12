@@ -388,6 +388,26 @@ export interface MissionOrder {
   generatedByName: string;
 }
 
+export interface PaymentReceipt {
+  missionId: number;
+  orderNumber: string;
+  receiptNumber: string;
+  missionTitle: string;
+  /** @nullable */
+  departmentName?: string | null;
+  destination: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  employees: MissionEmployeeFee[];
+  totalFees: number;
+  paidAmount: number;
+  remainingAmount: number;
+  paymentDate: string;
+  paymentConfirmedByName: string;
+  missionStatus: string;
+}
+
 export interface StatusCount {
   status: string;
   count: number;

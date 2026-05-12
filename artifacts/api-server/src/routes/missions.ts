@@ -14,6 +14,7 @@ import {
   AssignVehiclesBody,
   GenerateMissionOrderParams,
   GetMissionOrderParams,
+  GetMissionPaymentReceiptParams,
   GetMissionEmployeesParams,
   GetMissionValidationsParams,
 } from "@workspace/api-zod";
@@ -29,9 +30,8 @@ import { calculateFees, calcDurationDays, type EmployeeCategory } from "../lib/f
 
 const router: IRouter = Router();
 
-const VALIDATOR_ROLES = [
-  "director",
-  "central_director",
+// Transversal roles see ALL missions across departments
+const TRANSVERSAL_ROLES = [
   "technical_control",
   "dga",
   "dmg",
@@ -105,7 +105,8 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
 
   const conditions = [];
 
-  if (!VALIDATOR_ROLES.includes(userRole)) {
+  // Transversal roles see all missions; departmental roles are scoped to their direction
+  if (!TRANSVERSAL_ROLES.includes(userRole)) {
     if (userDeptId) {
       conditions.push(eq(missionsTable.departmentId, userDeptId));
     } else {
@@ -567,6 +568,94 @@ async function buildMissionOrder(missionId: number, generatedByUserId: number) {
     generatedByName: generatorUser?.fullName ?? "Inconnu",
   };
 }
+
+router.get("/missions/:id/payment-receipt", requireAuth, async (req, res): Promise<void> => {
+  const params = GetMissionPaymentReceiptParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [mission] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
+  if (!mission || !mission.orderNumber) {
+    res.status(404).json({ error: "Ordre de mission non trouvé — le paiement n'a pas encore été effectué" });
+    return;
+  }
+
+  // Get the cad_payment validation record (payment confirmation)
+  const paymentValidations = await db
+    .select()
+    .from(missionValidationsTable)
+    .where(
+      and(
+        eq(missionValidationsTable.missionId, params.data.id),
+        eq(missionValidationsTable.validatorRole, "cad_payment"),
+        eq(missionValidationsTable.action, "approve")
+      )
+    )
+    .orderBy(missionValidationsTable.createdAt)
+    .limit(1);
+
+  if (paymentValidations.length === 0) {
+    res.status(404).json({ error: "Aucune confirmation de paiement trouvée pour cette mission" });
+    return;
+  }
+
+  const paymentValidation = paymentValidations[0];
+  const [paymentUser] = await db
+    .select({ fullName: usersTable.fullName })
+    .from(usersTable)
+    .where(eq(usersTable.id, paymentValidation.validatorUserId));
+
+  const [dept] = mission.departmentId
+    ? await db.select({ name: departmentsTable.name }).from(departmentsTable).where(eq(departmentsTable.id, mission.departmentId))
+    : [null];
+
+  const missionEmps = await db.select().from(missionEmployeesTable).where(eq(missionEmployeesTable.missionId, params.data.id));
+  const empIds = missionEmps.map(me => me.employeeId);
+  const employees = empIds.length > 0 ? await db.select().from(employeesTable).where(inArray(employeesTable.id, empIds)) : [];
+
+  const durationDays = calcDurationDays(mission.startDate, mission.endDate);
+  let totalFees = 0;
+  const employeesWithFees = employees.map(e => {
+    const fees = calculateFees(e.category as EmployeeCategory, durationDays);
+    totalFees += fees.totalFee;
+    return {
+      employeeId: e.id,
+      fullName: `${e.firstName} ${e.lastName}`,
+      matricule: e.matricule,
+      nni: e.nni ?? null,
+      position: e.position,
+      category: e.category,
+      ...fees,
+      durationDays,
+    };
+  });
+
+  const paidAmount = Math.round(totalFees * 0.70 * 100) / 100;
+  const remainingAmount = Math.round((totalFees - paidAmount) * 100) / 100;
+
+  const receiptNumber = `REC-${new Date(paymentValidation.createdAt).getFullYear()}-${String(mission.id).padStart(4, "0")}`;
+
+  res.json({
+    missionId: mission.id,
+    orderNumber: mission.orderNumber,
+    receiptNumber,
+    missionTitle: mission.title,
+    departmentName: dept?.name ?? null,
+    destination: mission.destination,
+    startDate: mission.startDate,
+    endDate: mission.endDate,
+    durationDays,
+    employees: employeesWithFees,
+    totalFees,
+    paidAmount,
+    remainingAmount,
+    paymentDate: paymentValidation.createdAt.toISOString(),
+    paymentConfirmedByName: paymentUser?.fullName ?? "Inconnu",
+    missionStatus: mission.status,
+  });
+});
 
 router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<void> => {
   const params = GetMissionEmployeesParams.safeParse(req.params);

@@ -40,6 +40,7 @@ import type {
   MissionEmployeeFee,
   MissionListResponse,
   MissionOrder,
+  PaymentReceipt,
   SuccessResponse,
   UpdateDepartmentBody,
   UpdateEmployeeBody,
@@ -2454,6 +2455,95 @@ export function useGetMissionOrder<
   },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetMissionOrderQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get payment receipt data for a mission (after CAD Payment validation)
+ */
+export const getGetMissionPaymentReceiptUrl = (id: number) => {
+  return `/api/missions/${id}/payment-receipt`;
+};
+
+export const getMissionPaymentReceipt = async (
+  id: number,
+  options?: RequestInit,
+): Promise<PaymentReceipt> => {
+  return customFetch<PaymentReceipt>(getGetMissionPaymentReceiptUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMissionPaymentReceiptQueryKey = (id: number) => {
+  return [`/api/missions/${id}/payment-receipt`] as const;
+};
+
+export const getGetMissionPaymentReceiptQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMissionPaymentReceipt>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMissionPaymentReceipt>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetMissionPaymentReceiptQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getMissionPaymentReceipt>>
+  > = ({ signal }) =>
+    getMissionPaymentReceipt(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMissionPaymentReceipt>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMissionPaymentReceiptQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMissionPaymentReceipt>>
+>;
+export type GetMissionPaymentReceiptQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get payment receipt data for a mission (after CAD Payment validation)
+ */
+
+export function useGetMissionPaymentReceipt<
+  TData = Awaited<ReturnType<typeof getMissionPaymentReceipt>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMissionPaymentReceipt>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMissionPaymentReceiptQueryOptions(id, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;

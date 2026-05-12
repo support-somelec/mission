@@ -33,6 +33,7 @@ export * from "./missionEmployeeSummary";
 export * from "./missionListResponse";
 export * from "./missionOrder";
 export * from "./missionStatus";
+export * from "./paymentReceipt";
 export * from "./statusCount";
 export * from "./successResponse";
 export * from "./updateDepartmentBody";

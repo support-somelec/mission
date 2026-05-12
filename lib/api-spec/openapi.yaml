@@ -646,6 +646,31 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+  /missions/{id}/payment-receipt:
+    get:
+      operationId: getMissionPaymentReceipt
+      tags: [missions]
+      summary: Get payment receipt data for a mission (after CAD Payment validation)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Payment receipt
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentReceipt"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
   /missions/{id}/employees:
     get:
       operationId: getMissionEmployees
@@ -1426,6 +1451,60 @@ components:
         - remainingAmount
         - generatedAt
         - generatedByName
+
+    PaymentReceipt:
+      type: object
+      properties:
+        missionId:
+          type: integer
+        orderNumber:
+          type: string
+        receiptNumber:
+          type: string
+        missionTitle:
+          type: string
+        departmentName:
+          type: ["string", "null"]
+        destination:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        durationDays:
+          type: integer
+        employees:
+          type: array
+          items:
+            $ref: "#/components/schemas/MissionEmployeeFee"
+        totalFees:
+          type: number
+        paidAmount:
+          type: number
+        remainingAmount:
+          type: number
+        paymentDate:
+          type: string
+        paymentConfirmedByName:
+          type: string
+        missionStatus:
+          type: string
+      required:
+        - missionId
+        - orderNumber
+        - receiptNumber
+        - missionTitle
+        - destination
+        - startDate
+        - endDate
+        - durationDays
+        - employees
+        - totalFees
+        - paidAmount
+        - remainingAmount
+        - paymentDate
+        - paymentConfirmedByName
+        - missionStatus
 
     DashboardStats:
       type: object

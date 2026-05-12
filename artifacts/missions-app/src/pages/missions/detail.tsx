@@ -14,7 +14,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
   ArrowLeft, Printer, CheckCircle, XCircle, CarFront, FileText, 
-  Map, Calendar, Settings, Fuel, CreditCard
+  Map, Calendar, Settings, Fuel, CreditCard, Receipt
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -157,6 +157,9 @@ export default function MissionDetail() {
   const canAssignVehicles = isCurrentValidator && isDMG;
   const canGenerateOrder = isCurrentValidator && isCADEdition && mission.status === "en_vigueur" && !mission.orderNumber;
   const canPrintOrder = !!mission.orderNumber;
+  const canViewReceipt = !!mission.orderNumber &&
+    ["pending_financial_control", "approved"].includes(mission.status) &&
+    ["admin", "cad_payment", "financial_control"].includes(role);
 
   // CAD Paiement validates via normal validate route
   const canValidateNormally = isCurrentValidator && !canAssignVehicles && !canGenerateOrder;
@@ -210,6 +213,14 @@ export default function MissionDetail() {
             <Link href={`/missions/${mission.id}/order`}>
               <Button variant="outline">
                 <Printer className="w-4 h-4 mr-2" /> Imprimer OM
+              </Button>
+            </Link>
+          )}
+
+          {canViewReceipt && (
+            <Link href={`/missions/${mission.id}/payment-receipt`}>
+              <Button variant="outline" className="border-emerald-300 text-emerald-700 hover:bg-emerald-50">
+                <Receipt className="w-4 h-4 mr-2" /> Reçu de Paiement
               </Button>
             </Link>
           )}

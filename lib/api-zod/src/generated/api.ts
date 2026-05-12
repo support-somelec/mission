@@ -868,6 +868,46 @@ export const GetMissionOrderResponse = zod.object({
 });
 
 /**
+ * @summary Get payment receipt data for a mission (after CAD Payment validation)
+ */
+export const GetMissionPaymentReceiptParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetMissionPaymentReceiptResponse = zod.object({
+  missionId: zod.number(),
+  orderNumber: zod.string(),
+  receiptNumber: zod.string(),
+  missionTitle: zod.string(),
+  departmentName: zod.string().nullish(),
+  destination: zod.string(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  durationDays: zod.number(),
+  employees: zod.array(
+    zod.object({
+      employeeId: zod.number(),
+      fullName: zod.string(),
+      matricule: zod.string(),
+      nni: zod.string().nullish(),
+      position: zod.string(),
+      category: zod.string(),
+      dailyRate: zod.number(),
+      durationDays: zod.number(),
+      totalFee: zod.number(),
+      paidAmount: zod.number(),
+      remainingAmount: zod.number(),
+    }),
+  ),
+  totalFees: zod.number(),
+  paidAmount: zod.number(),
+  remainingAmount: zod.number(),
+  paymentDate: zod.string(),
+  paymentConfirmedByName: zod.string(),
+  missionStatus: zod.string(),
+});
+
+/**
  * @summary Get employees assigned to a mission with fee calculations
  */
 export const GetMissionEmployeesParams = zod.object({
