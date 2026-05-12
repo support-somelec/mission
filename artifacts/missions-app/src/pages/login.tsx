@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { Map, Loader2, ArrowRight } from "lucide-react";
+import { Loader2, ArrowRight } from "lucide-react";
+import logoSomelec from "/logo-somelec.png";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -69,14 +70,14 @@ export default function Login() {
       <div className="hidden lg:flex flex-1 flex-col bg-primary text-primary-foreground p-12 justify-between relative overflow-hidden">
         <div className="absolute inset-0 opacity-10 bg-[url('https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?q=80&w=2070&auto=format&fit=crop')] bg-cover bg-center" />
         <div className="relative z-10 flex items-center gap-3">
-          <Map className="w-10 h-10" />
-          <h1 className="text-3xl font-bold tracking-tight">SOMELEC</h1>
+          <img src={logoSomelec} alt="Logo Groupe Somelec" className="w-12 h-12 object-contain invert" />
+          <h1 className="text-3xl font-bold tracking-tight">Groupe Somelec</h1>
         </div>
 
         <div className="relative z-10 max-w-lg">
           <h2 className="text-4xl font-bold mb-6">Système de Gestion des Missions</h2>
           <p className="text-lg text-primary-foreground/80 leading-relaxed">
-            Portail interne pour la création, le suivi et la validation des missions professionnelles. Structuré, efficace et sécurisé.
+            Portail interne pour la création, le suivi et la validation des missions professionnelles.
           </p>
 
           {/* Test accounts on left pane (desktop) */}
@@ -100,15 +101,15 @@ export default function Login() {
         </div>
 
         <div className="relative z-10 text-sm text-primary-foreground/60">
-          &copy; {new Date().getFullYear()} SOMELEC Mauritanie. Tous droits réservés.
+          &copy; {new Date().getFullYear()} Groupe Somelec Mauritanie. Tous droits réservés.
         </div>
       </div>
 
       {/* Right pane - Login Form */}
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 overflow-y-auto">
         <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2 text-primary font-bold">
-          <Map className="w-6 h-6" />
-          <span className="text-xl tracking-tight">SOMELEC</span>
+          <img src={logoSomelec} alt="Logo Groupe Somelec" className="w-7 h-7 object-contain" />
+          <span className="text-xl tracking-tight">Groupe Somelec</span>
         </div>
 
         <div className="w-full max-w-md space-y-4">

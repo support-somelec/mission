@@ -20,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2 } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
+import logoSomelec from "/logo-somelec.png";
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
@@ -47,8 +48,8 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <Sidebar className="border-r border-gray-200 dark:border-gray-800">
           <SidebarHeader className="border-b border-gray-200 dark:border-gray-800 p-4">
             <div className="flex items-center gap-2 font-bold text-primary">
-              <Map className="w-6 h-6" />
-              <span className="text-lg tracking-tight">SOMELEC</span>
+              <img src={logoSomelec} alt="Logo Groupe Somelec" className="w-7 h-7 object-contain" />
+              <span className="text-lg tracking-tight">Groupe Somelec</span>
             </div>
             <div className="text-xs text-muted-foreground font-medium uppercase tracking-wider mt-1">
               Gestion des Missions
@@ -132,7 +133,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
         <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <header className="h-14 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center px-4 lg:hidden shrink-0">
             <SidebarTrigger />
-            <div className="ml-4 font-semibold text-primary">SOMELEC</div>
+            <div className="ml-4 font-semibold text-primary">Groupe Somelec</div>
           </header>
           <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900 p-4 md:p-8">
             <div className="mx-auto max-w-6xl w-full">

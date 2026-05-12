@@ -79,7 +79,7 @@ export default function MissionPaymentReceipt() {
             <p className="text-xs uppercase tracking-widest text-gray-400">République Islamique de Mauritanie</p>
             <p className="text-xs text-gray-400">Honneur — Fraternité — Justice</p>
             <div className="mt-4">
-              <p className="text-xl font-bold tracking-tight">SOMELEC</p>
+              <p className="text-xl font-bold tracking-tight">Groupe Somelec</p>
               <p className="text-xs text-gray-600">Société Mauritanienne d'Électricité</p>
               {receipt.departmentName && (
                 <p className="text-sm font-medium text-gray-700 mt-1">{receipt.departmentName}</p>
