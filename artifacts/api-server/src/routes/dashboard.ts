@@ -3,9 +3,9 @@ import { eq, sql, and, inArray } from "drizzle-orm";
 import { db, missionsTable, usersTable, departmentsTable, employeesTable } from "@workspace/db";
 import { GetPendingValidationsQueryParams } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/session";
-import { calcDurationDays, calculateFees, type EmployeeCategory } from "../lib/fees";
+import { calcDurationDays } from "../lib/fees";
 import { missionEmployeesTable } from "@workspace/db";
-import { type MissionStatus, type UserRole, canUserValidate } from "../lib/mission-workflow";
+import { type MissionStatus, type UserRole } from "../lib/mission-workflow";
 
 const router: IRouter = Router();
 
@@ -15,9 +15,9 @@ const VALIDATOR_ROLES = [
   "technical_control",
   "dga",
   "dmg",
-  "cad",
+  "cad_edition",
+  "cad_payment",
   "financial_control",
-  "drh",
   "admin",
 ];
 
@@ -28,11 +28,22 @@ const STATUS_LABELS: Record<string, string> = {
   pending_technical_control: "En attente Contrôle Technique",
   pending_dga: "En attente DGA",
   pending_dmg: "En attente DMG",
-  pending_cad: "En attente CAD",
+  en_vigueur: "En Vigueur",
+  pending_cad_payment: "En attente CAD Paiement",
   pending_financial_control: "En attente Contrôle Financier",
-  pending_drh: "En attente DRH",
   approved: "Approuvée",
   rejected: "Rejetée",
+};
+
+const ROLE_TO_STATUS: Record<string, string> = {
+  director: "pending_director",
+  central_director: "pending_central_director",
+  technical_control: "pending_technical_control",
+  dga: "pending_dga",
+  dmg: "pending_dmg",
+  cad_edition: "en_vigueur",
+  cad_payment: "pending_cad_payment",
+  financial_control: "pending_financial_control",
 };
 
 router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
@@ -64,22 +75,11 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
     .from(missionsTable)
     .where(missionScope ? and(missionScope, eq(missionsTable.status, "rejected")) : eq(missionsTable.status, "rejected"));
 
-  // Pending for current user
   let pendingCondition;
   if (userRole === "admin") {
     pendingCondition = sql`${missionsTable.status} NOT IN ('draft','approved','rejected')`;
   } else if (isValidator) {
-    const statusMap: Record<string, string> = {
-      director: "pending_director",
-      central_director: "pending_central_director",
-      technical_control: "pending_technical_control",
-      dga: "pending_dga",
-      dmg: "pending_dmg",
-      cad: "pending_cad",
-      financial_control: "pending_financial_control",
-      drh: "pending_drh",
-    };
-    const myStatus = statusMap[userRole];
+    const myStatus = ROLE_TO_STATUS[userRole];
     pendingCondition = myStatus ? eq(missionsTable.status, myStatus as MissionStatus) : sql`false`;
   } else {
     pendingCondition = sql`false`;
@@ -135,22 +135,11 @@ router.get("/dashboard/pending-validations", requireAuth, async (req, res): Prom
   const offset = (page - 1) * limit;
   const userRole = req.userRole! as UserRole;
 
-  const statusMap: Record<string, string> = {
-    director: "pending_director",
-    central_director: "pending_central_director",
-    technical_control: "pending_technical_control",
-    dga: "pending_dga",
-    dmg: "pending_dmg",
-    cad: "pending_cad",
-    financial_control: "pending_financial_control",
-    drh: "pending_drh",
-  };
-
   let condition;
   if (userRole === "admin") {
     condition = sql`${missionsTable.status} NOT IN ('draft','approved','rejected')`;
   } else {
-    const myStatus = statusMap[userRole];
+    const myStatus = ROLE_TO_STATUS[userRole];
     if (!myStatus) {
       res.json({ data: [], total: 0, page, limit, totalPages: 0 });
       return;

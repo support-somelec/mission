@@ -16,7 +16,7 @@ export const UserRole = {
   technical_control: "technical_control",
   dga: "dga",
   dmg: "dmg",
-  cad: "cad",
+  cad_edition: "cad_edition",
+  cad_payment: "cad_payment",
   financial_control: "financial_control",
-  drh: "drh",
 } as const;

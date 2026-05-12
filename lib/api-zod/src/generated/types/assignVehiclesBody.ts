@@ -7,6 +7,7 @@
  */
 
 export interface AssignVehiclesBody {
-  vehicleDetails: string;
+  /** @nullable */
+  vehicleDetails?: string | null;
   vehicleCount: number;
 }

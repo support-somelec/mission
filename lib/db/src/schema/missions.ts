@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, boolean, pgEnum, date, numeric } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, boolean, pgEnum, date } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -9,9 +9,9 @@ export const missionStatusEnum = pgEnum("mission_status", [
   "pending_technical_control",
   "pending_dga",
   "pending_dmg",
-  "pending_cad",
+  "en_vigueur",
+  "pending_cad_payment",
   "pending_financial_control",
-  "pending_drh",
   "approved",
   "rejected",
 ]);

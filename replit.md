@@ -27,7 +27,8 @@ A full-stack internal mission management system for SOMELEC (Mauritanian electri
    - Director → Central Director
 3. **Administrative Circuit**:
    - Central Director → Technical Control → DGA → DMG (assigns vehicles) → CAD (generates order) → Financial Control → DRH
-4. **Payment**: CAD pays 70%, DRH pays remaining 30%
+4. **OM Generation**: CAD Édition generates Order of Mission (no fee amounts, includes QR code) → advances to pending_cad_payment
+5. **Payment**: CAD Paiement confirms 70% payment → Contrôle Financier confirms 30% → Mission approved
 
 ### User Roles
 - `admin` — full system access, manage departments/users/employees
@@ -36,10 +37,10 @@ A full-stack internal mission management system for SOMELEC (Mauritanian electri
 - `central_director` — validate director and employee missions
 - `technical_control` — validate in admin circuit
 - `dga` — validate after technical control
-- `dmg` — assign vehicles to missions
-- `cad` — generate mission orders, initiate payment
-- `financial_control` — validate financial payment
-- `drh` — complete remaining 30% payment
+- `dmg` — assign vehicles, puts mission En Vigueur
+- `cad_edition` — generate mission order (OM) when status=en_vigueur
+- `cad_payment` — confirm 70% payment, advances to financial_control
+- `financial_control` — confirm 30% payment, approves mission
 
 ### Fee Calculation (MRU/day)
 | Category | ≤5 days | 6-10 days | 11-15 days |
@@ -56,16 +57,16 @@ CAD pays 70%, DRH pays 30%.
 
 | Username | Password | Role |
 |----------|----------|------|
-| admin | admin123 | Administrator |
-| ahmed.dg | admin123 | Employee (Direction Générale) |
-| fatima.drh | password123 | Director (DRH) |
-| directeur.central | password123 | Central Director |
-| controle.tech | password123 | Technical Control |
+| admin | admin123 | Administrateur |
+| ahmed.dg | admin123 | Utilisateur Simple (Direction Générale) |
+| fatima.drh | password123 | Directeur |
+| directeur.central | password123 | Directeur Central |
+| controle.tech | password123 | Contrôle Technique |
 | dga.somelec | password123 | DGA |
 | dmg.somelec | password123 | DMG |
-| cad.somelec | password123 | CAD |
-| ctrl.financier | password123 | Financial Control |
-| drh.somelec | password123 | DRH |
+| cad.edition | password123 | CAD Édition (génère l'OM) |
+| cad.paiement | password123 | CAD Paiement (confirme paiement 70%) |
+| ctrl.financier | password123 | Contrôle Financier (solde 30%) |
 
 ## Key Commands
 

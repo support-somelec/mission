@@ -5,10 +5,11 @@ export function StatusBadge({ status }: { status: string }) {
   const label = MISSION_STATUS_LABELS[status] || status;
   const variant = MISSION_STATUS_COLORS[status] || "default";
 
-  // Provide custom coloring for pending and approved
   let colorClass = "";
   if (status.startsWith("pending_")) {
     colorClass = "bg-amber-500 hover:bg-amber-600 text-white border-transparent";
+  } else if (status === "en_vigueur") {
+    colorClass = "bg-blue-600 hover:bg-blue-700 text-white border-transparent";
   } else if (status === "approved") {
     colorClass = "bg-emerald-500 hover:bg-emerald-600 text-white border-transparent";
   }

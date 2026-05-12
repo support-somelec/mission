@@ -35,9 +35,9 @@ const VALIDATOR_ROLES = [
   "technical_control",
   "dga",
   "dmg",
-  "cad",
+  "cad_edition",
+  "cad_payment",
   "financial_control",
-  "drh",
   "admin",
 ];
 
@@ -105,7 +105,6 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
 
   const conditions = [];
 
-  // Scope: validators see all, regular employees see only their dept
   if (!VALIDATOR_ROLES.includes(userRole)) {
     if (userDeptId) {
       conditions.push(eq(missionsTable.departmentId, userDeptId));
@@ -361,8 +360,6 @@ router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<voi
     return;
   }
 
-  const [validator] = await db.select({ fullName: usersTable.fullName }).from(usersTable).where(eq(usersTable.id, req.userId!));
-
   const fromStatus = mission.status;
   const toStatus: MissionStatus = parsed.data.action === "approve"
     ? getNextStatus(mission.status as MissionStatus)
@@ -416,24 +413,19 @@ router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Prom
   }
 
   const fromStatus = mission.status as MissionStatus;
-
-  // Advance the mission to the next stage after DMG assigns vehicles
   const toStatus: MissionStatus = mission.status === "pending_dmg"
     ? getNextStatus("pending_dmg")
     : (mission.status as MissionStatus);
 
   await db.update(missionsTable)
     .set({
-      vehicleDetails: parsed.data.vehicleDetails,
+      vehicleDetails: parsed.data.vehicleDetails ?? null,
       vehicleCount: parsed.data.vehicleCount,
       status: toStatus,
-      currentValidationRole: toStatus !== "approved" && toStatus !== "rejected"
-        ? toStatus.replace("pending_", "")
-        : null,
+      currentValidationRole: toStatus === "en_vigueur" ? "cad_edition" : null,
     })
     .where(eq(missionsTable.id, params.data.id));
 
-  // Record a validation entry for audit trail
   if (mission.status === "pending_dmg") {
     await db.insert(missionValidationsTable).values({
       missionId: mission.id,
@@ -442,7 +434,7 @@ router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Prom
       action: "approve",
       comment: parsed.data.vehicleDetails
         ? `Véhicules affectés : ${parsed.data.vehicleDetails}`
-        : "Véhicules affectés",
+        : "Mission validée sans véhicule",
       fromStatus,
       toStatus,
     });
@@ -459,8 +451,8 @@ router.post("/missions/:id/generate-order", requireAuth, async (req, res): Promi
     return;
   }
 
-  if (req.userRole !== "cad" && req.userRole !== "admin") {
-    res.status(403).json({ error: "Seul le CAD peut générer l'ordre de mission" });
+  if (req.userRole !== "cad_edition" && req.userRole !== "admin") {
+    res.status(403).json({ error: "Seul le CAD Édition peut générer l'ordre de mission" });
     return;
   }
 
@@ -470,20 +462,36 @@ router.post("/missions/:id/generate-order", requireAuth, async (req, res): Promi
     return;
   }
 
-  if (mission.status !== "pending_cad" && mission.status !== "pending_financial_control" && mission.status !== "pending_drh" && mission.status !== "approved") {
-    res.status(400).json({ error: "La mission doit être validée par le DGA avant de générer l'ordre" });
+  if (mission.status !== "en_vigueur" && mission.status !== "pending_cad_payment" && mission.status !== "pending_financial_control" && mission.status !== "approved") {
+    res.status(400).json({ error: "La mission doit être en vigueur (validée par le DMG) avant de générer l'ordre" });
     return;
   }
 
   const orderNumber = `OM-${new Date().getFullYear()}-${String(mission.id).padStart(4, "0")}`;
+  const fromStatus = mission.status as MissionStatus;
+  const toStatus: MissionStatus = mission.status === "en_vigueur" ? "pending_cad_payment" : (mission.status as MissionStatus);
 
   await db.update(missionsTable)
     .set({
       orderNumber,
       orderGeneratedAt: new Date(),
       orderGeneratedByUserId: req.userId,
+      status: toStatus,
+      currentValidationRole: toStatus === "pending_cad_payment" ? "cad_payment" : mission.currentValidationRole,
     })
     .where(eq(missionsTable.id, params.data.id));
+
+  if (mission.status === "en_vigueur") {
+    await db.insert(missionValidationsTable).values({
+      missionId: mission.id,
+      validatorUserId: req.userId!,
+      validatorRole: "cad_edition",
+      action: "approve",
+      comment: `Ordre de mission généré : ${orderNumber}`,
+      fromStatus,
+      toStatus,
+    });
+  }
 
   const result = await buildMissionOrder(params.data.id, req.userId!);
   res.json(result);

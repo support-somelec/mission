@@ -33,9 +33,9 @@ export const UserRole = {
   technical_control: "technical_control",
   dga: "dga",
   dmg: "dmg",
-  cad: "cad",
+  cad_edition: "cad_edition",
+  cad_payment: "cad_payment",
   financial_control: "financial_control",
-  drh: "drh",
 } as const;
 
 export interface User {
@@ -218,9 +218,9 @@ export const MissionStatus = {
   pending_technical_control: "pending_technical_control",
   pending_dga: "pending_dga",
   pending_dmg: "pending_dmg",
-  pending_cad: "pending_cad",
+  en_vigueur: "en_vigueur",
+  pending_cad_payment: "pending_cad_payment",
   pending_financial_control: "pending_financial_control",
-  pending_drh: "pending_drh",
   approved: "approved",
   rejected: "rejected",
 } as const;
@@ -337,7 +337,8 @@ export interface ValidateMissionBody {
 }
 
 export interface AssignVehiclesBody {
-  vehicleDetails: string;
+  /** @nullable */
+  vehicleDetails?: string | null;
   vehicleCount: number;
 }
 

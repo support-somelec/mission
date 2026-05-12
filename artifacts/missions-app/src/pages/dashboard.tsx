@@ -13,7 +13,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
   const { data: pending, isLoading: pendingLoading } = useGetPendingValidations({ page: 1, limit: 5 });
-  const { data: recent, isLoading: recentLoading } = useGetRecentMissions({ page: 1, limit: 5 });
+  const { data: recent, isLoading: recentLoading } = useGetRecentMissions();
 
   const formatDate = (dateString: string) => {
     try {
@@ -90,9 +90,9 @@ export default function Dashboard() {
               <div className="space-y-4">
                 {[1, 2, 3].map(i => <Skeleton key={i} className="h-12 w-full" />)}
               </div>
-            ) : recent?.data && recent.data.length > 0 ? (
+            ) : recent && recent.length > 0 ? (
               <div className="space-y-4">
-                {recent.data.map(mission => (
+                {recent.map(mission => (
                   <div key={mission.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="space-y-1">
                       <p className="text-sm font-medium leading-none">{mission.title}</p>

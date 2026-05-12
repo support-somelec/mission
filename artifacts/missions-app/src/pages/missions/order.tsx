@@ -2,37 +2,38 @@ import { useRoute, Link } from "wouter";
 import { useGetMissionOrder } from "@workspace/api-client-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowLeft, Printer, Map } from "lucide-react";
+import { ArrowLeft, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { QRCodeSVG } from "qrcode.react";
 
 export default function MissionOrderPrint() {
   const [, params] = useRoute("/missions/:id/order");
   const id = parseInt(params?.id || "0", 10);
 
   const { data: order, isLoading } = useGetMissionOrder(id, {
-    query: { enabled: !!id }
+    query: { queryKey: [`/api/missions/${id}/order`], enabled: !!id },
   });
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  const formatDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });
-    } catch (e) {
-      return dateString;
-    }
+  const formatDate = (d: string) => {
+    try { return format(new Date(d), "dd MMMM yyyy", { locale: fr }); }
+    catch { return d; }
   };
 
   if (isLoading) {
-    return <div className="p-12 text-center">Chargement...</div>;
+    return (
+      <div className="max-w-4xl mx-auto p-8 space-y-4">
+        <Skeleton className="h-8 w-48" />
+        <Skeleton className="h-[600px] w-full" />
+      </div>
+    );
   }
 
   if (!order) {
     return (
       <div className="p-12 text-center space-y-4">
-        <p>Ordre de mission non trouvé ou non généré.</p>
+        <p>Ordre de mission non trouvé ou non encore généré.</p>
         <Link href={`/missions/${id}`}>
           <Button>Retour à la mission</Button>
         </Link>
@@ -40,109 +41,187 @@ export default function MissionOrderPrint() {
     );
   }
 
+  const qrContent = [
+    `N°: ${order.orderNumber}`,
+    `Mission: ${order.missionTitle}`,
+    `Destination: ${order.destination}`,
+    `Du: ${order.startDate} au: ${order.endDate}`,
+    `Émis par: ${order.generatedByName}`,
+    `Département: ${order.departmentName ?? "SOMELEC"}`,
+  ].join("\n");
+
   return (
-    <div className="min-h-screen bg-gray-100 p-4 sm:p-8">
-      <div className="max-w-4xl mx-auto mb-6 flex justify-between items-center print:hidden">
+    <div className="min-h-screen bg-gray-100 print:bg-white">
+      {/* Toolbar — hidden when printing */}
+      <div className="print:hidden max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href={`/missions/${id}`}>
-          <Button variant="outline">
+          <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" /> Retour
           </Button>
         </Link>
-        <Button onClick={handlePrint} className="bg-primary">
+        <Button onClick={() => window.print()}>
           <Printer className="w-4 h-4 mr-2" /> Imprimer
         </Button>
       </div>
 
-      <div className="max-w-4xl mx-auto bg-white border shadow-sm print:shadow-none print:border-none p-12 print:p-0">
+      {/* Document */}
+      <div className="max-w-4xl mx-auto print:max-w-none print:shadow-none bg-white border border-gray-200 shadow print:border-0 p-12 print:p-8 text-gray-800 print:text-black text-sm">
+
         {/* Header */}
-        <div className="flex justify-between items-start border-b-2 border-black pb-6 mb-8">
-          <div className="flex items-center gap-3">
-            <Map className="w-12 h-12 text-black" />
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight uppercase">SOMELEC</h1>
-              <p className="text-sm font-medium">Société Mauritanienne d'Electricité</p>
-              <p className="text-xs">{order.departmentName}</p>
+        <div className="flex justify-between items-start mb-8">
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-widest text-gray-400">République Islamique de Mauritanie</p>
+            <p className="text-xs text-gray-400">Honneur — Fraternité — Justice</p>
+            <div className="mt-4">
+              <p className="text-xl font-bold tracking-tight">SOMELEC</p>
+              <p className="text-xs text-gray-600">Société Mauritanienne d'Électricité</p>
+              {order.departmentName && (
+                <p className="text-sm font-medium text-gray-700 mt-1">{order.departmentName}</p>
+              )}
             </div>
           </div>
-          <div className="text-right">
-            <div className="text-sm font-bold border border-black p-2 mb-2 inline-block">
-              N° {order.orderNumber}
+
+          <div className="text-right space-y-3">
+            <div className="border-2 border-gray-800 px-5 py-3 inline-block rounded">
+              <p className="text-xs text-gray-500 mb-1">Numéro d'Ordre</p>
+              <p className="font-mono font-bold text-lg tracking-wider">{order.orderNumber}</p>
             </div>
-            <p className="text-sm">
-              Nouakchott, le {formatDate(order.generatedAt)}
-            </p>
+            <div className="flex justify-end mt-2">
+              <div className="border border-gray-200 p-1 rounded">
+                <QRCodeSVG value={qrContent} size={88} level="M" includeMargin={false} />
+              </div>
+            </div>
+            <p className="text-xs text-gray-400">Scanner pour vérifier</p>
           </div>
         </div>
 
         {/* Title */}
-        <div className="text-center mb-10">
-          <h2 className="text-2xl font-bold uppercase underline underline-offset-4">Ordre de Mission</h2>
+        <div className="text-center my-8">
+          <h1 className="text-2xl font-bold uppercase tracking-widest">Ordre de Mission</h1>
+          <div className="w-32 h-0.5 bg-gray-800 mx-auto mt-2" />
         </div>
 
-        {/* Content */}
-        <div className="space-y-6 text-sm leading-relaxed">
-          <p>
-            Il est ordonné aux personnes désignées ci-dessous de se rendre à <strong className="uppercase">{order.destination}</strong> pour motif de mission de service.
+        {/* Mission details */}
+        <div className="mb-6 space-y-3">
+          <p className="leading-relaxed">
+            Il est ordonné aux agents désignés ci-dessous de se rendre à{" "}
+            <strong className="uppercase">{order.destination}</strong>{" "}
+            dans le cadre de : <em>{order.missionTitle}</em>.
           </p>
-          
-          <div className="my-6">
-            <table className="w-full border-collapse border border-black text-sm">
-              <thead>
-                <tr className="bg-gray-100 print:bg-gray-100">
-                  <th className="border border-black p-2 text-left">N° Matricule</th>
-                  <th className="border border-black p-2 text-left">Nom & Prénom</th>
-                  <th className="border border-black p-2 text-left">Fonction</th>
-                </tr>
-              </thead>
-              <tbody>
-                {order.employees.map((emp) => (
-                  <tr key={emp.employeeId}>
-                    <td className="border border-black p-2">{emp.matricule}</td>
-                    <td className="border border-black p-2 font-medium">{emp.fullName}</td>
-                    <td className="border border-black p-2">{emp.position}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
 
-          <div className="space-y-2">
-            <p><strong>Motif de la mission :</strong> {order.missionTitle}</p>
-            <p><strong>Période :</strong> Du {formatDate(order.startDate)} au {formatDate(order.endDate)} (soit {order.durationDays} jours)</p>
-          </div>
-
-          <div className="space-y-2 mt-6">
-            <p className="font-bold underline">Moyens logistiques :</p>
-            <ul className="list-disc pl-6">
-              <li>Véhicule SOMELEC : {order.requiresVehicle ? `Oui (${order.vehicleDetails || `${order.vehicleCount} véhicule(s)`})` : 'Non'}</li>
-              <li>Dotation Carburant : {order.requiresFuel ? 'Oui' : 'Non'}</li>
-            </ul>
-          </div>
-
-          <div className="mt-8 border border-black p-4 bg-gray-50 print:bg-gray-50">
-            <p className="font-bold underline mb-2">Imputation Budgétaire (Frais de mission) :</p>
-            <p>Montant total : <strong>{order.totalFees} MRU</strong></p>
-            <ul className="list-none mt-2 space-y-1">
-              <li>- Avance CAD (70%) : <strong>{order.paidAmount} MRU</strong></li>
-              <li>- Reste DRH (30%) : <strong>{order.remainingAmount} MRU</strong></li>
-            </ul>
+          <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
+            <div>
+              <span className="text-gray-500 font-medium">Date de départ :</span>{" "}
+              <strong>{formatDate(order.startDate)}</strong>
+            </div>
+            <div>
+              <span className="text-gray-500 font-medium">Date de retour :</span>{" "}
+              <strong>{formatDate(order.endDate)}</strong>
+            </div>
+            <div>
+              <span className="text-gray-500 font-medium">Durée :</span>{" "}
+              <strong>{order.durationDays} jour{order.durationDays > 1 ? "s" : ""}</strong>
+            </div>
+            <div>
+              <span className="text-gray-500 font-medium">Date d'émission :</span>{" "}
+              <strong>{order.generatedAt ? formatDate(order.generatedAt) : "-"}</strong>
+            </div>
           </div>
         </div>
+
+        <Separator className="my-6" />
+
+        {/* Missionnaires */}
+        <div className="mb-8">
+          <h2 className="font-bold text-sm uppercase tracking-widest mb-4 text-gray-700">
+            Liste des Missionnaires
+          </h2>
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-gray-100 print:bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2.5 text-left font-semibold w-8">N°</th>
+                <th className="border border-gray-300 px-3 py-2.5 text-left font-semibold">Nom Complet</th>
+                <th className="border border-gray-300 px-3 py-2.5 text-left font-semibold">Matricule</th>
+                <th className="border border-gray-300 px-3 py-2.5 text-left font-semibold">Poste / Fonction</th>
+              </tr>
+            </thead>
+            <tbody>
+              {order.employees.map((emp, i) => (
+                <tr key={emp.employeeId} className={i % 2 === 0 ? "" : "bg-gray-50 print:bg-gray-50"}>
+                  <td className="border border-gray-300 px-3 py-2.5 text-center text-gray-500">{i + 1}</td>
+                  <td className="border border-gray-300 px-3 py-2.5 font-medium">{emp.fullName}</td>
+                  <td className="border border-gray-300 px-3 py-2.5 font-mono text-xs">{emp.matricule}</td>
+                  <td className="border border-gray-300 px-3 py-2.5">{emp.position}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Logistics */}
+        <div className="mb-8 text-sm">
+          <h2 className="font-bold text-sm uppercase tracking-widest mb-3 text-gray-700">Moyens Logistiques</h2>
+          <ul className="list-disc pl-6 space-y-1">
+            <li>
+              Véhicule SOMELEC :{" "}
+              {order.requiresVehicle
+                ? <strong>{order.vehicleCount} véhicule(s){order.vehicleDetails ? ` — ${order.vehicleDetails}` : ""}</strong>
+                : <span className="text-gray-500">Non</span>}
+            </li>
+            <li>
+              Dotation Carburant :{" "}
+              {order.requiresFuel
+                ? <strong>Accordé</strong>
+                : <span className="text-gray-500">Non</span>}
+            </li>
+          </ul>
+        </div>
+
+        <Separator className="my-8" />
 
         {/* Signatures */}
-        <div className="mt-16 flex justify-between">
-          <div className="text-center w-64">
-            <p className="font-bold mb-16">Le Directeur / Chef de Département</p>
+        <div className="grid grid-cols-3 gap-6 text-center text-sm mt-8">
+          <div>
+            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-16">
+              CAD Édition
+            </p>
+            <div className="border-t border-gray-400 pt-2">
+              <p className="text-xs text-gray-500">{order.generatedByName}</p>
+              <p className="text-xs text-gray-400">
+                {order.generatedAt ? formatDate(order.generatedAt) : ""}
+              </p>
+            </div>
           </div>
-          <div className="text-center w-64">
-            <p className="font-bold mb-16">Le Directeur Général (ou délégataire)</p>
+
+          <div>
+            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-16">
+              Directeur / Chef Dépt.
+            </p>
+            <div className="border-t border-gray-400 pt-2">
+              <p className="text-xs text-gray-400">Cachet &amp; Signature</p>
+            </div>
+          </div>
+
+          <div>
+            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-16">
+              Directeur Général
+            </p>
+            <div className="border-t border-gray-400 pt-2">
+              <p className="text-xs text-gray-400">Cachet &amp; Signature</p>
+            </div>
           </div>
         </div>
 
-        <div className="mt-24 border-t border-gray-300 pt-4 text-xs text-center text-gray-500 print:text-black">
-          Généré par {order.generatedByName} le {format(new Date(order.generatedAt), "dd/MM/yyyy HH:mm")} - Système de Gestion des Missions SOMELEC
+        <div className="mt-10 border-t border-gray-200 pt-4 text-center text-xs text-gray-400 print:text-gray-500">
+          Document officiel généré électroniquement — Système de Gestion des Missions SOMELEC — {order.orderNumber}
         </div>
       </div>
+
+      <style>{`
+        @media print {
+          body { margin: 0; background: white; }
+        }
+      `}</style>
     </div>
   );
 }

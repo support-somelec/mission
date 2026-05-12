@@ -46,7 +46,7 @@ router.get("/users", requireAuth, requireAdmin, async (req, res): Promise<void> 
     conditions.push(eq(usersTable.departmentId, departmentId));
   }
   if (role) {
-    conditions.push(eq(usersTable.role, role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad" | "financial_control" | "drh"));
+    conditions.push(eq(usersTable.role, role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control"));
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

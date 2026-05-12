@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const { data, isLoading, error } = useGetCurrentUser({
     query: {
+      queryKey: getGetCurrentUserQueryKey(),
       retry: false,
       refetchOnWindowFocus: false,
     }
@@ -42,10 +43,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         queryClient.setQueryData(getGetCurrentUserQueryKey(), res.user);
         setLocation("/");
       },
-      onError: (err: any) => {
+      onError: (err: unknown) => {
+        const msg = (err as { error?: string })?.error || "Nom d'utilisateur ou mot de passe incorrect.";
         toast({
           title: "Erreur de connexion",
-          description: err?.error || "Nom d'utilisateur ou mot de passe incorrect.",
+          description: msg,
           variant: "destructive",
         });
       }

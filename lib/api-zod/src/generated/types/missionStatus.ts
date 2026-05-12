@@ -15,9 +15,9 @@ export const MissionStatus = {
   pending_technical_control: "pending_technical_control",
   pending_dga: "pending_dga",
   pending_dmg: "pending_dmg",
-  pending_cad: "pending_cad",
+  en_vigueur: "en_vigueur",
+  pending_cad_payment: "pending_cad_payment",
   pending_financial_control: "pending_financial_control",
-  pending_drh: "pending_drh",
   approved: "approved",
   rejected: "rejected",
 } as const;

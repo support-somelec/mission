@@ -5,9 +5,9 @@ export type MissionStatus =
   | "pending_technical_control"
   | "pending_dga"
   | "pending_dmg"
-  | "pending_cad"
+  | "en_vigueur"
+  | "pending_cad_payment"
   | "pending_financial_control"
-  | "pending_drh"
   | "approved"
   | "rejected";
 
@@ -19,19 +19,19 @@ export type UserRole =
   | "technical_control"
   | "dga"
   | "dmg"
-  | "cad"
-  | "financial_control"
-  | "drh";
+  | "cad_edition"
+  | "cad_payment"
+  | "financial_control";
 
 const WORKFLOW_NEXT: Record<string, MissionStatus> = {
   pending_director: "pending_central_director",
   pending_central_director: "pending_technical_control",
   pending_technical_control: "pending_dga",
   pending_dga: "pending_dmg",
-  pending_dmg: "pending_cad",
-  pending_cad: "pending_financial_control",
-  pending_financial_control: "pending_drh",
-  pending_drh: "approved",
+  pending_dmg: "en_vigueur",
+  en_vigueur: "pending_cad_payment",
+  pending_cad_payment: "pending_financial_control",
+  pending_financial_control: "approved",
 };
 
 const STATUS_TO_ROLE: Record<string, UserRole> = {
@@ -40,9 +40,9 @@ const STATUS_TO_ROLE: Record<string, UserRole> = {
   pending_technical_control: "technical_control",
   pending_dga: "dga",
   pending_dmg: "dmg",
-  pending_cad: "cad",
+  en_vigueur: "cad_edition",
+  pending_cad_payment: "cad_payment",
   pending_financial_control: "financial_control",
-  pending_drh: "drh",
 };
 
 export function getNextStatus(current: MissionStatus): MissionStatus {
@@ -60,7 +60,10 @@ export function canUserValidate(userRole: UserRole, missionStatus: MissionStatus
 }
 
 export function getInitialStatus(creatorRole: UserRole): MissionStatus {
-  if (creatorRole === "director" || creatorRole === "central_director") {
+  if (creatorRole === "central_director") {
+    return "pending_technical_control";
+  }
+  if (creatorRole === "director") {
     return "pending_central_director";
   }
   return "pending_director";

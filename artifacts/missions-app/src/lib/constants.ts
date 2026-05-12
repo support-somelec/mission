@@ -5,10 +5,10 @@ export const MISSION_STATUS_LABELS: Record<string, string> = {
   pending_technical_control: "En attente Contrôle Technique",
   pending_dga: "En attente DGA",
   pending_dmg: "En attente DMG",
-  pending_cad: "En attente CAD",
+  en_vigueur: "En Vigueur",
+  pending_cad_payment: "En attente CAD Paiement",
   pending_financial_control: "En attente Contrôle Financier",
-  pending_drh: "En attente DRH",
-  approved: "Approuvée",
+  approved: "Validée",
   rejected: "Rejetée",
 };
 
@@ -19,10 +19,10 @@ export const MISSION_STATUS_COLORS: Record<string, "default" | "secondary" | "de
   pending_technical_control: "default",
   pending_dga: "default",
   pending_dmg: "default",
-  pending_cad: "default",
+  en_vigueur: "outline",
+  pending_cad_payment: "default",
   pending_financial_control: "default",
-  pending_drh: "default",
-  approved: "outline", // Using outline or a custom success variant
+  approved: "outline",
   rejected: "destructive",
 };
 
@@ -36,13 +36,13 @@ export const EMPLOYEE_CATEGORY_LABELS: Record<string, string> = {
 
 export const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur",
-  employee: "Employé",
+  employee: "Utilisateur Simple",
   director: "Directeur",
   central_director: "Directeur Central",
   technical_control: "Contrôle Technique",
   dga: "DGA",
   dmg: "DMG",
-  cad: "CAD",
+  cad_edition: "CAD - Édition",
+  cad_payment: "CAD - Paiement",
   financial_control: "Contrôle Financier",
-  drh: "DRH",
 };
