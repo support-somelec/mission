@@ -460,6 +460,43 @@ export interface DashboardStats {
   recentActivity: number;
 }
 
+export interface ReportingByDepartment {
+  departmentId: number;
+  departmentName: string;
+  total: number;
+  approved: number;
+  rejected: number;
+  inProgress: number;
+}
+
+export interface ReportingByMonth {
+  year: number;
+  month: number;
+  monthLabel: string;
+  total: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface ReportingByEmployee {
+  employeeId: number;
+  firstName: string;
+  lastName: string;
+  matricule: string;
+  departmentName: string;
+  missionCount: number;
+}
+
+export interface ReportingData {
+  byDepartment: ReportingByDepartment[];
+  byMonth: ReportingByMonth[];
+  byEmployee: ReportingByEmployee[];
+  totalMissions: number;
+  totalApproved: number;
+  totalRejected: number;
+  totalInProgress: number;
+}
+
 export type ListDepartmentsParams = {
   page?: number;
   limit?: number;
@@ -535,4 +572,9 @@ export type AddMissionEmployeeBody = {
 export type GetPendingValidationsParams = {
   page?: number;
   limit?: number;
+};
+
+export type GetReportingParams = {
+  year?: number;
+  departmentId?: number;
 };

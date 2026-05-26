@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, sql, and, inArray } from "drizzle-orm";
+import { eq, sql, and, inArray, gte, lte } from "drizzle-orm";
 import { db, missionsTable, usersTable, departmentsTable, employeesTable } from "@workspace/db";
 import { GetPendingValidationsQueryParams } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/session";
@@ -249,6 +249,144 @@ router.get("/dashboard/recent-missions", requireAuth, async (req, res): Promise<
       employees: [],
     }))
   );
+});
+
+const MONTH_LABELS = [
+  "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
+  "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
+];
+
+router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> => {
+  const userRole = req.userRole!;
+  if (userRole !== "admin" && userRole !== "dga") {
+    res.status(403).json({ error: "Accès réservé aux administrateurs et DGA" });
+    return;
+  }
+
+  const yearParam = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+  const departmentIdParam = req.query.departmentId ? Number(req.query.departmentId) : undefined;
+
+  const yearStart = new Date(`${yearParam}-01-01T00:00:00.000Z`);
+  const yearEnd = new Date(`${yearParam}-12-31T23:59:59.999Z`);
+
+  const baseConditions = [
+    gte(missionsTable.createdAt, yearStart),
+    lte(missionsTable.createdAt, yearEnd),
+    ...(departmentIdParam ? [eq(missionsTable.departmentId, departmentIdParam)] : []),
+  ];
+
+  // ── Par direction ─────────────────────────────────────────────────────────
+  const byDeptRaw = await db
+    .select({
+      departmentId: missionsTable.departmentId,
+      status: missionsTable.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(missionsTable)
+    .where(and(...baseConditions))
+    .groupBy(missionsTable.departmentId, missionsTable.status);
+
+  const deptIds = [...new Set(byDeptRaw.filter(r => r.departmentId).map(r => r.departmentId!))];
+  const depts = deptIds.length > 0
+    ? await db.select({ id: departmentsTable.id, name: departmentsTable.name }).from(departmentsTable).where(inArray(departmentsTable.id, deptIds))
+    : [];
+  const deptNameMap = new Map(depts.map(d => [d.id, d.name]));
+
+  const deptAgg = new Map<number, { departmentId: number; departmentName: string; total: number; approved: number; rejected: number; inProgress: number }>();
+  for (const row of byDeptRaw) {
+    if (!row.departmentId) continue;
+    if (!deptAgg.has(row.departmentId)) {
+      deptAgg.set(row.departmentId, {
+        departmentId: row.departmentId,
+        departmentName: deptNameMap.get(row.departmentId) ?? "Inconnu",
+        total: 0, approved: 0, rejected: 0, inProgress: 0,
+      });
+    }
+    const entry = deptAgg.get(row.departmentId)!;
+    entry.total += row.count;
+    if (row.status === "approved") entry.approved += row.count;
+    else if (row.status === "rejected") entry.rejected += row.count;
+    else entry.inProgress += row.count;
+  }
+  const byDepartment = [...deptAgg.values()].sort((a, b) => b.total - a.total);
+
+  // ── Par mois ──────────────────────────────────────────────────────────────
+  const byMonthRaw = await db
+    .select({
+      month: sql<number>`EXTRACT(MONTH FROM ${missionsTable.createdAt})::int`,
+      status: missionsTable.status,
+      count: sql<number>`count(*)::int`,
+    })
+    .from(missionsTable)
+    .where(and(...baseConditions))
+    .groupBy(sql`EXTRACT(MONTH FROM ${missionsTable.createdAt})`, missionsTable.status);
+
+  const monthAgg = new Map<number, { year: number; month: number; monthLabel: string; total: number; approved: number; rejected: number }>();
+  for (let m = 1; m <= 12; m++) {
+    monthAgg.set(m, { year: yearParam, month: m, monthLabel: MONTH_LABELS[m - 1], total: 0, approved: 0, rejected: 0 });
+  }
+  for (const row of byMonthRaw) {
+    const entry = monthAgg.get(row.month);
+    if (!entry) continue;
+    entry.total += row.count;
+    if (row.status === "approved") entry.approved += row.count;
+    else if (row.status === "rejected") entry.rejected += row.count;
+  }
+  const byMonth = [...monthAgg.values()];
+
+  // ── Par agent ─────────────────────────────────────────────────────────────
+  const byEmployeeRaw = await db
+    .select({
+      employeeId: missionEmployeesTable.employeeId,
+      count: sql<number>`count(distinct ${missionEmployeesTable.missionId})::int`,
+    })
+    .from(missionEmployeesTable)
+    .innerJoin(missionsTable, eq(missionEmployeesTable.missionId, missionsTable.id))
+    .where(and(...baseConditions))
+    .groupBy(missionEmployeesTable.employeeId)
+    .orderBy(sql`count(distinct ${missionEmployeesTable.missionId}) DESC`)
+    .limit(20);
+
+  const empIds = byEmployeeRaw.map(r => r.employeeId);
+  const emps = empIds.length > 0
+    ? await db
+        .select({
+          id: employeesTable.id,
+          firstName: employeesTable.firstName,
+          lastName: employeesTable.lastName,
+          matricule: employeesTable.matricule,
+          departmentId: employeesTable.departmentId,
+        })
+        .from(employeesTable)
+        .where(inArray(employeesTable.id, empIds))
+    : [];
+
+  const empDeptIds = [...new Set(emps.filter(e => e.departmentId).map(e => e.departmentId!))];
+  const empDepts = empDeptIds.length > 0
+    ? await db.select({ id: departmentsTable.id, name: departmentsTable.name }).from(departmentsTable).where(inArray(departmentsTable.id, empDeptIds))
+    : [];
+  const empDeptMap = new Map(empDepts.map(d => [d.id, d.name]));
+  const empMap = new Map(emps.map(e => [e.id, e]));
+
+  const byEmployee = byEmployeeRaw.map(r => {
+    const emp = empMap.get(r.employeeId);
+    return {
+      employeeId: r.employeeId,
+      firstName: emp?.firstName ?? "",
+      lastName: emp?.lastName ?? "",
+      matricule: emp?.matricule ?? "",
+      departmentName: emp?.departmentId ? (empDeptMap.get(emp.departmentId) ?? "—") : "—",
+      missionCount: r.count,
+    };
+  });
+
+  // ── Totaux ────────────────────────────────────────────────────────────────
+  const totalMissions = byMonth.reduce((s, m) => s + m.total, 0);
+  const totalApproved = byMonth.reduce((s, m) => s + m.approved, 0);
+  const totalRejected = byMonth.reduce((s, m) => s + m.rejected, 0);
+  const totalInProgress = totalMissions - totalApproved - totalRejected;
+
+  res.json({ byDepartment, byMonth, byEmployee, totalMissions, totalApproved, totalRejected, totalInProgress });
 });
 
 export default router;

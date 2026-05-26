@@ -1196,3 +1196,48 @@ export const GetRecentMissionsResponseItem = zod.object({
 export const GetRecentMissionsResponse = zod.array(
   GetRecentMissionsResponseItem,
 );
+
+/**
+ * @summary Get reporting data (admin and DGA only)
+ */
+export const GetReportingQueryParams = zod.object({
+  year: zod.coerce.number().optional(),
+  departmentId: zod.coerce.number().optional(),
+});
+
+export const GetReportingResponse = zod.object({
+  byDepartment: zod.array(
+    zod.object({
+      departmentId: zod.number(),
+      departmentName: zod.string(),
+      total: zod.number(),
+      approved: zod.number(),
+      rejected: zod.number(),
+      inProgress: zod.number(),
+    }),
+  ),
+  byMonth: zod.array(
+    zod.object({
+      year: zod.number(),
+      month: zod.number(),
+      monthLabel: zod.string(),
+      total: zod.number(),
+      approved: zod.number(),
+      rejected: zod.number(),
+    }),
+  ),
+  byEmployee: zod.array(
+    zod.object({
+      employeeId: zod.number(),
+      firstName: zod.string(),
+      lastName: zod.string(),
+      matricule: zod.string(),
+      departmentName: zod.string(),
+      missionCount: zod.number(),
+    }),
+  ),
+  totalMissions: zod.number(),
+  totalApproved: zod.number(),
+  totalRejected: zod.number(),
+  totalInProgress: zod.number(),
+});

@@ -907,6 +907,34 @@ paths:
                 items:
                   $ref: "#/components/schemas/Mission"
 
+  /dashboard/reporting:
+    get:
+      operationId: getReporting
+      tags: [dashboard]
+      summary: Get reporting data (admin and DGA only)
+      parameters:
+        - name: year
+          in: query
+          schema:
+            type: integer
+        - name: departmentId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Reporting data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportingData"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
@@ -1730,3 +1758,104 @@ components:
         - status
         - count
         - label
+
+    ReportingByDepartment:
+      type: object
+      properties:
+        departmentId:
+          type: integer
+        departmentName:
+          type: string
+        total:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        inProgress:
+          type: integer
+      required:
+        - departmentId
+        - departmentName
+        - total
+        - approved
+        - rejected
+        - inProgress
+
+    ReportingByMonth:
+      type: object
+      properties:
+        year:
+          type: integer
+        month:
+          type: integer
+        monthLabel:
+          type: string
+        total:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+      required:
+        - year
+        - month
+        - monthLabel
+        - total
+        - approved
+        - rejected
+
+    ReportingByEmployee:
+      type: object
+      properties:
+        employeeId:
+          type: integer
+        firstName:
+          type: string
+        lastName:
+          type: string
+        matricule:
+          type: string
+        departmentName:
+          type: string
+        missionCount:
+          type: integer
+      required:
+        - employeeId
+        - firstName
+        - lastName
+        - matricule
+        - departmentName
+        - missionCount
+
+    ReportingData:
+      type: object
+      properties:
+        byDepartment:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportingByDepartment"
+        byMonth:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportingByMonth"
+        byEmployee:
+          type: array
+          items:
+            $ref: "#/components/schemas/ReportingByEmployee"
+        totalMissions:
+          type: integer
+        totalApproved:
+          type: integer
+        totalRejected:
+          type: integer
+        totalInProgress:
+          type: integer
+      required:
+        - byDepartment
+        - byMonth
+        - byEmployee
+        - totalMissions
+        - totalApproved
+        - totalRejected
+        - totalInProgress

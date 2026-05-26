@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle, BarChart3 } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
 import logoSomelec from "/logo-somelec.png";
 import {
@@ -159,12 +159,15 @@ export function AppLayout({ children }: { children: ReactNode }) {
   if (!user) return <>{children}</>;
 
   const isAdmin = user.role === "admin";
+  const isDga = user.role === "dga";
+  const canReport = isAdmin || isDga;
   const mustChangePwd = user.mustChangePassword === true;
 
   const navigation = [
     { name: "Tableau de Bord", href: "/dashboard", icon: LayoutDashboard },
     { name: "Missions", href: "/missions", icon: Map },
     ...(isAdmin ? [{ name: "Employés", href: "/employees", icon: Users }] : []),
+    ...(canReport ? [{ name: "Reporting", href: "/reporting", icon: BarChart3 }] : []),
   ];
 
   const adminNavigation = isAdmin ? [

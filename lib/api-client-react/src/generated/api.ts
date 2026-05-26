@@ -32,6 +32,7 @@ import type {
   EmployeeListResponse,
   ErrorResponse,
   GetPendingValidationsParams,
+  GetReportingParams,
   HealthStatus,
   ListDepartmentsParams,
   ListEmployeesParams,
@@ -44,6 +45,7 @@ import type {
   MissionOrder,
   PaymentReceipt,
   RegisterBody,
+  ReportingData,
   SuccessResponse,
   UpdateDepartmentBody,
   UpdateEmployeeBody,
@@ -3406,6 +3408,100 @@ export function useGetRecentMissions<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getGetRecentMissionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Get reporting data (admin and DGA only)
+ */
+export const getGetReportingUrl = (params?: GetReportingParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/dashboard/reporting?${stringifiedParams}`
+    : `/api/dashboard/reporting`;
+};
+
+export const getReporting = async (
+  params?: GetReportingParams,
+  options?: RequestInit,
+): Promise<ReportingData> => {
+  return customFetch<ReportingData>(getGetReportingUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetReportingQueryKey = (params?: GetReportingParams) => {
+  return [`/api/dashboard/reporting`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetReportingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getReporting>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetReportingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReporting>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetReportingQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getReporting>>> = ({
+    signal,
+  }) => getReporting(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getReporting>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetReportingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getReporting>>
+>;
+export type GetReportingQueryError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Get reporting data (admin and DGA only)
+ */
+
+export function useGetReporting<
+  TData = Awaited<ReturnType<typeof getReporting>>,
+  TError = ErrorType<ErrorResponse>,
+>(
+  params?: GetReportingParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getReporting>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetReportingQueryOptions(params, options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
