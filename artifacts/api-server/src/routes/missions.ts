@@ -108,11 +108,23 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
 
   const conditions = [];
 
-  // Transversal roles see all missions; departmental roles are scoped to their direction
+  // Visibility rules by role:
+  // - transversal roles (dmg, cad, etc.): see all missions
+  // - central_director: sees missions from their dept + all child depts
+  // - director: sees all missions where departmentId = their dept
+  // - employee: sees only their own missions
   if (!TRANSVERSAL_ROLES.includes(userRole)) {
-    if (userDeptId) {
+    if (userRole === "central_director" && userDeptId) {
+      const childDepts = await db
+        .select({ id: departmentsTable.id })
+        .from(departmentsTable)
+        .where(eq(departmentsTable.parentId, userDeptId));
+      const visibleDeptIds = [userDeptId, ...childDepts.map(d => d.id)];
+      conditions.push(inArray(missionsTable.departmentId, visibleDeptIds));
+    } else if (userRole === "director" && userDeptId) {
       conditions.push(eq(missionsTable.departmentId, userDeptId));
     } else {
+      // employee or no dept: only own missions
       conditions.push(eq(missionsTable.createdByUserId, userId));
     }
   }
