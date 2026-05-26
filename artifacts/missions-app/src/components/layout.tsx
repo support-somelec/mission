@@ -1,6 +1,7 @@
 import { useState, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
+import { useChangePassword } from "@workspace/api-client-react";
 import {
   Sidebar,
   SidebarContent,
@@ -16,19 +17,149 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2 } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
 import logoSomelec from "/logo-somelec.png";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { useToast } from "@/hooks/use-toast";
+
+function ChangePasswordDialog({
+  open,
+  onOpenChange,
+  forced = false,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  forced?: boolean;
+}) {
+  const { toast } = useToast();
+  const { refreshUser } = useAuth();
+  const [form, setForm] = useState({ current: "", next: "", confirm: "" });
+  const [error, setError] = useState("");
+
+  const mutation = useChangePassword({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Mot de passe modifié avec succès" });
+        refreshUser();
+        onOpenChange(false);
+        setForm({ current: "", next: "", confirm: "" });
+        setError("");
+      },
+      onError: (err: unknown) => {
+        const msg =
+          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ??
+          "Une erreur est survenue";
+        setError(msg);
+      },
+    },
+  });
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (form.next !== form.confirm) {
+      setError("Les deux nouveaux mots de passe ne correspondent pas");
+      return;
+    }
+    if (form.next.length < 6) {
+      setError("Le nouveau mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+    mutation.mutate({ data: { currentPassword: form.current, newPassword: form.next } });
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!forced) onOpenChange(v);
+      }}
+    >
+      <DialogContent className="max-w-md" onInteractOutside={forced ? (e) => e.preventDefault() : undefined}>
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <KeyRound className="w-5 h-5" />
+            {forced ? "Changement de mot de passe obligatoire" : "Changer le mot de passe"}
+          </DialogTitle>
+          {forced && (
+            <DialogDescription className="flex items-start gap-2 text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3 mt-2">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              Vous devez changer votre mot de passe avant de continuer. Votre mot de passe actuel est le mot de passe par défaut.
+            </DialogDescription>
+          )}
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-2">
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-current">Mot de passe actuel</Label>
+            <Input
+              id="cp-current"
+              type="password"
+              placeholder="••••••••"
+              value={form.current}
+              onChange={(e) => setForm((f) => ({ ...f, current: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-next">Nouveau mot de passe</Label>
+            <Input
+              id="cp-next"
+              type="password"
+              placeholder="Minimum 6 caractères"
+              value={form.next}
+              onChange={(e) => setForm((f) => ({ ...f, next: e.target.value }))}
+              required
+            />
+          </div>
+          <div className="space-y-1.5">
+            <Label htmlFor="cp-confirm">Confirmer le nouveau mot de passe</Label>
+            <Input
+              id="cp-confirm"
+              type="password"
+              placeholder="••••••••"
+              value={form.confirm}
+              onChange={(e) => setForm((f) => ({ ...f, confirm: e.target.value }))}
+              required
+            />
+          </div>
+          {error && <p className="text-sm text-destructive">{error}</p>}
+          <DialogFooter>
+            {!forced && (
+              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+                Annuler
+              </Button>
+            )}
+            <Button type="submit" disabled={mutation.isPending}>
+              {mutation.isPending ? "Modification..." : "Changer le mot de passe"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
 
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
+  const [changePwdOpen, setChangePwdOpen] = useState(false);
 
   if (!user) return <>{children}</>;
 
   const isAdmin = user.role === "admin";
+  const mustChangePwd = user.mustChangePassword === true;
 
   const navigation = [
     { name: "Tableau de Bord", href: "/dashboard", icon: LayoutDashboard },
@@ -101,6 +232,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
               </SidebarGroup>
             )}
           </SidebarContent>
+
           <SidebarFooter className="border-t border-gray-200 dark:border-gray-800 p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -112,6 +244,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     <span className="font-medium truncate w-full">{user.fullName}</span>
                     <span className="text-xs text-muted-foreground truncate w-full">{ROLE_LABELS[user.role] || user.role}</span>
                   </div>
+                  {mustChangePwd && <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -121,6 +254,16 @@ export function AppLayout({ children }: { children: ReactNode }) {
                     {user.email && <p className="w-[200px] truncate text-sm text-muted-foreground">{user.email}</p>}
                   </div>
                 </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => setChangePwdOpen(true)}
+                  className="cursor-pointer"
+                >
+                  <KeyRound className="mr-2 h-4 w-4" />
+                  <span>Changer le mot de passe</span>
+                  {mustChangePwd && <AlertTriangle className="ml-auto w-3.5 h-3.5 text-amber-500" />}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => logout()} className="text-red-600 focus:bg-red-50 focus:text-red-600 cursor-pointer">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Déconnexion</span>
@@ -142,6 +285,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
           </div>
         </main>
       </div>
+
+      <ChangePasswordDialog
+        open={changePwdOpen || mustChangePwd}
+        onOpenChange={setChangePwdOpen}
+        forced={mustChangePwd}
+      />
     </SidebarProvider>
   );
 }

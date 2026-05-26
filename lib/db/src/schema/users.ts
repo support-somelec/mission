@@ -1,4 +1,4 @@
-import { pgTable, text, serial, timestamp, integer, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, integer, pgEnum, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -15,6 +15,8 @@ export const userRoleEnum = pgEnum("user_role", [
   "financial_control",
 ]);
 
+export const userStatusEnum = pgEnum("user_status", ["pending", "active"]);
+
 export const usersTable = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -22,6 +24,8 @@ export const usersTable = pgTable("users", {
   fullName: text("full_name").notNull(),
   email: text("email"),
   role: userRoleEnum("role").notNull().default("employee"),
+  status: userStatusEnum("status").notNull().default("active"),
+  mustChangePassword: boolean("must_change_password").notNull().default(false),
   departmentId: integer("department_id"),
   employeeId: integer("employee_id"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

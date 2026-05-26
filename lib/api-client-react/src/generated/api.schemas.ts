@@ -23,6 +23,18 @@ export interface LoginBody {
   password: string;
 }
 
+export interface RegisterBody {
+  username: string;
+  fullName: string;
+  /** @nullable */
+  email?: string | null;
+}
+
+export interface ChangePasswordBody {
+  currentPassword: string;
+  newPassword: string;
+}
+
 export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const UserRole = {
@@ -38,6 +50,13 @@ export const UserRole = {
   financial_control: "financial_control",
 } as const;
 
+export type UserStatus = (typeof UserStatus)[keyof typeof UserStatus];
+
+export const UserStatus = {
+  pending: "pending",
+  active: "active",
+} as const;
+
 export interface User {
   id: number;
   username: string;
@@ -45,6 +64,8 @@ export interface User {
   /** @nullable */
   email?: string | null;
   role: UserRole;
+  status: UserStatus;
+  mustChangePassword: boolean;
   /** @nullable */
   departmentId?: number | null;
   /** @nullable */
@@ -72,6 +93,18 @@ export interface CreateUserBody {
   employeeId?: number | null;
 }
 
+/**
+ * @nullable
+ */
+export type UpdateUserBodyStatus =
+  | (typeof UpdateUserBodyStatus)[keyof typeof UpdateUserBodyStatus]
+  | null;
+
+export const UpdateUserBodyStatus = {
+  pending: "pending",
+  active: "active",
+} as const;
+
 export interface UpdateUserBody {
   /** @nullable */
   fullName?: string | null;
@@ -79,6 +112,8 @@ export interface UpdateUserBody {
   email?: string | null;
   /** @nullable */
   role?: string | null;
+  /** @nullable */
+  status?: UpdateUserBodyStatus;
   /** @nullable */
   departmentId?: number | null;
   /** @nullable */

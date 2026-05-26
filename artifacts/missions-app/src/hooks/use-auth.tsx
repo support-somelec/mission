@@ -10,6 +10,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: ReturnType<typeof useLogin>["mutateAsync"];
   logout: () => void;
+  refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -44,7 +45,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setLocation("/");
       },
       onError: (err: unknown) => {
-        const msg = (err as { error?: string })?.error || "Nom d'utilisateur ou mot de passe incorrect.";
+        const msg =
+          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          (err as { error?: string })?.error ||
+          "Nom d'utilisateur ou mot de passe incorrect.";
         toast({
           title: "Erreur de connexion",
           description: msg,
@@ -66,8 +70,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = () => logoutMutation.mutate();
 
+  const refreshUser = () => {
+    queryClient.invalidateQueries({ queryKey: getGetCurrentUserQueryKey() });
+  };
+
   return (
-    <AuthContext.Provider value={{ user, isLoading, login: loginMutation.mutateAsync, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login: loginMutation.mutateAsync, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

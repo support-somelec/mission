@@ -3,7 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
-import { Loader2, ArrowRight } from "lucide-react";
+import { useRegister } from "@workspace/api-client-react";
+import { Loader2, ArrowRight, UserPlus, ChevronLeft } from "lucide-react";
 import logoSomelec from "/logo-somelec.png";
 
 import { Button } from "@/components/ui/button";
@@ -17,13 +18,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Le nom d'utilisateur est requis"),
   password: z.string().min(1, "Le mot de passe est requis"),
 });
 
+const registerSchema = z.object({
+  username: z.string().min(3, "Au moins 3 caractères"),
+  fullName: z.string().min(2, "Le nom complet est requis"),
+  email: z.string().email("Email invalide").optional().or(z.literal("")),
+});
+
 type LoginFormValues = z.infer<typeof loginSchema>;
+type RegisterFormValues = z.infer<typeof registerSchema>;
 
 const TEST_USERS = [
   { username: "admin",             password: "admin123",   label: "Administrateur",        color: "bg-slate-700" },
@@ -40,14 +49,33 @@ const TEST_USERS = [
 
 export default function Login() {
   const { login } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const [mode, setMode] = useState<"login" | "register" | "registered">("login");
 
-  const form = useForm<LoginFormValues>({
+  const loginForm = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: { username: "", password: "" },
   });
 
-  const onSubmit = async (data: LoginFormValues) => {
+  const registerForm = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { username: "", fullName: "", email: "" },
+  });
+
+  const registerMutation = useRegister({
+    mutation: {
+      onSuccess: () => {
+        setMode("registered");
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const onLoginSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
       await login({ data });
@@ -58,10 +86,20 @@ export default function Login() {
     }
   };
 
+  const onRegisterSubmit = (data: RegisterFormValues) => {
+    registerMutation.mutate({
+      data: {
+        username: data.username,
+        fullName: data.fullName,
+        email: data.email || null,
+      },
+    });
+  };
+
   const fillAndLogin = (username: string, password: string) => {
-    form.setValue("username", username);
-    form.setValue("password", password);
-    form.handleSubmit(onSubmit)();
+    loginForm.setValue("username", username);
+    loginForm.setValue("password", password);
+    loginForm.handleSubmit(onLoginSubmit)();
   };
 
   return (
@@ -80,24 +118,25 @@ export default function Login() {
             Portail interne pour la création, le suivi et la validation des missions professionnelles.
           </p>
 
-          {/* Test accounts on left pane (desktop) */}
-          <div className="mt-10">
-            <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/50 mb-3">
-              Comptes de démonstration
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {TEST_USERS.map((u) => (
-                <button
-                  key={u.username}
-                  onClick={() => fillAndLogin(u.username, u.password)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-left"
-                >
-                  <span className={`w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
-                  <span className="text-xs font-medium truncate">{u.label}</span>
-                </button>
-              ))}
+          {mode === "login" && (
+            <div className="mt-10">
+              <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/50 mb-3">
+                Comptes de démonstration
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {TEST_USERS.map((u) => (
+                  <button
+                    key={u.username}
+                    onClick={() => fillAndLogin(u.username, u.password)}
+                    className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-left"
+                  >
+                    <span className={`w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
+                    <span className="text-xs font-medium truncate">{u.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className="relative z-10 text-sm text-primary-foreground/60">
@@ -105,7 +144,7 @@ export default function Login() {
         </div>
       </div>
 
-      {/* Right pane - Login Form */}
+      {/* Right pane */}
       <div className="flex-1 flex flex-col justify-center items-center p-6 sm:p-12 overflow-y-auto">
         <div className="absolute top-8 left-8 lg:hidden flex items-center gap-2 text-primary font-bold">
           <img src={logoSomelec} alt="Logo Groupe Somelec" className="w-7 h-7 object-contain" />
@@ -113,84 +152,202 @@ export default function Login() {
         </div>
 
         <div className="w-full max-w-md space-y-4">
-          <Card className="border-0 shadow-xl sm:border sm:shadow-lg">
-            <CardHeader className="space-y-3 pb-6">
-              <CardTitle className="text-2xl font-bold tracking-tight">Connexion</CardTitle>
-              <CardDescription className="text-base">
-                Veuillez entrer vos identifiants pour accéder à votre espace.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Form {...form}>
-                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
-                  <FormField
-                    control={form.control}
-                    name="username"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Nom d'utilisateur</FormLabel>
-                        <FormControl>
-                          <Input placeholder="admin, cad.edition..." {...field} className="h-12" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="password"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Mot de passe</FormLabel>
-                        <FormControl>
-                          <Input type="password" placeholder="••••••••" {...field} className="h-12" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="submit"
-                    className="w-full h-12 text-base font-medium"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Connexion en cours...</>
-                    ) : (
-                      <><span className="flex-1 text-center">Se connecter</span><ArrowRight className="w-5 h-5 ml-2" /></>
-                    )}
-                  </Button>
-                </form>
-              </Form>
-            </CardContent>
-          </Card>
+          {/* ── LOGIN FORM ── */}
+          {mode === "login" && (
+            <>
+              <Card className="border-0 shadow-xl sm:border sm:shadow-lg">
+                <CardHeader className="space-y-3 pb-6">
+                  <CardTitle className="text-2xl font-bold tracking-tight">Connexion</CardTitle>
+                  <CardDescription className="text-base">
+                    Veuillez entrer vos identifiants pour accéder à votre espace.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Form {...loginForm}>
+                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-5">
+                      <FormField
+                        control={loginForm.control}
+                        name="username"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Nom d'utilisateur</FormLabel>
+                            <FormControl>
+                              <Input placeholder="admin, cad.edition..." {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={loginForm.control}
+                        name="password"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Mot de passe</FormLabel>
+                            <FormControl>
+                              <Input type="password" placeholder="••••••••" {...field} className="h-12" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <Button type="submit" className="w-full h-12 text-base font-medium" disabled={isLoading}>
+                        {isLoading ? (
+                          <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Connexion en cours...</>
+                        ) : (
+                          <><span className="flex-1 text-center">Se connecter</span><ArrowRight className="w-5 h-5 ml-2" /></>
+                        )}
+                      </Button>
+                    </form>
+                  </Form>
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setMode("register")}
+                      className="text-sm text-primary hover:underline inline-flex items-center gap-1"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      Créer un compte
+                    </button>
+                  </div>
+                </CardContent>
+              </Card>
 
-          {/* Test accounts card (mobile / right pane) */}
-          <Card className="border border-dashed shadow-none">
-            <CardHeader className="pb-3 pt-4 px-4">
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Comptes de démonstration — cliquer pour se connecter
-              </p>
-            </CardHeader>
-            <CardContent className="px-4 pb-4">
-              <div className="grid grid-cols-2 gap-2">
-                {TEST_USERS.map((u) => (
+              <Card className="border border-dashed shadow-none">
+                <CardHeader className="pb-3 pt-4 px-4">
+                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                    Comptes de démonstration — cliquer pour se connecter
+                  </p>
+                </CardHeader>
+                <CardContent className="px-4 pb-4">
+                  <div className="grid grid-cols-2 gap-2">
+                    {TEST_USERS.map((u) => (
+                      <button
+                        key={u.username}
+                        onClick={() => fillAndLogin(u.username, u.password)}
+                        disabled={isLoading}
+                        className="flex items-start gap-2 px-3 py-2 rounded-md border bg-white hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
+                      >
+                        <span className={`mt-1 w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-foreground truncate">{u.label}</div>
+                          <div className="text-[11px] text-muted-foreground font-mono truncate">{u.username}</div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          {/* ── REGISTER FORM ── */}
+          {mode === "register" && (
+            <Card className="border-0 shadow-xl sm:border sm:shadow-lg">
+              <CardHeader className="space-y-3 pb-6">
+                <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                  <UserPlus className="w-6 h-6" />
+                  Créer un compte
+                </CardTitle>
+                <CardDescription className="text-base">
+                  Votre compte sera activé une fois qu'un administrateur vous aura affecté à votre direction.
+                  Le mot de passe par défaut vous sera communiqué.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Form {...registerForm}>
+                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-5">
+                    <FormField
+                      control={registerForm.control}
+                      name="fullName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nom complet *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Prénom et Nom" {...field} className="h-12" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="username"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nom d'utilisateur *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="ex: ahmed.ould" {...field} className="h-12" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={registerForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email (optionnel)</FormLabel>
+                          <FormControl>
+                            <Input type="email" placeholder="email@somelec.mr" {...field} className="h-12" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button
+                      type="submit"
+                      className="w-full h-12 text-base font-medium"
+                      disabled={registerMutation.isPending}
+                    >
+                      {registerMutation.isPending ? (
+                        <><Loader2 className="mr-2 h-5 w-5 animate-spin" /> Création en cours...</>
+                      ) : (
+                        "Créer mon compte"
+                      )}
+                    </Button>
+                  </form>
+                </Form>
+                <div className="mt-4 text-center">
                   <button
-                    key={u.username}
-                    onClick={() => fillAndLogin(u.username, u.password)}
-                    disabled={isLoading}
-                    className="flex items-start gap-2 px-3 py-2 rounded-md border bg-white hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
+                    type="button"
+                    onClick={() => setMode("login")}
+                    className="text-sm text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                   >
-                    <span className={`mt-1 w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
-                    <div className="min-w-0">
-                      <div className="text-xs font-semibold text-foreground truncate">{u.label}</div>
-                      <div className="text-[11px] text-muted-foreground font-mono truncate">{u.username}</div>
-                    </div>
+                    <ChevronLeft className="w-4 h-4" />
+                    Retour à la connexion
                   </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* ── SUCCESS MESSAGE ── */}
+          {mode === "registered" && (
+            <Card className="border-0 shadow-xl sm:border sm:shadow-lg">
+              <CardHeader className="space-y-3 pb-6">
+                <CardTitle className="text-2xl font-bold tracking-tight text-green-700">
+                  Compte créé !
+                </CardTitle>
+                <CardDescription className="text-base leading-relaxed">
+                  Votre demande a été enregistrée. Un administrateur va vérifier votre compte et vous affecter
+                  à votre direction. Vous recevrez un mot de passe temporaire (<strong>Somelec@2024</strong>)
+                  pour votre première connexion.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => { setMode("login"); registerForm.reset(); }}
+                >
+                  <ChevronLeft className="w-4 h-4 mr-2" />
+                  Retour à la connexion
+                </Button>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

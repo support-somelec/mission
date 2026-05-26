@@ -40,6 +40,8 @@ export const LoginResponse = zod.object({
       "cad_payment",
       "financial_control",
     ]),
+    status: zod.enum(["pending", "active"]),
+    mustChangePassword: zod.boolean(),
     departmentId: zod.number().nullish(),
     departmentName: zod.string().nullish(),
     employeeId: zod.number().nullish(),
@@ -52,6 +54,28 @@ export const LoginResponse = zod.object({
  * @summary User logout
  */
 export const LogoutResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
+});
+
+/**
+ * @summary Self-register a new user account (pending until admin assigns department)
+ */
+export const RegisterBody = zod.object({
+  username: zod.string(),
+  fullName: zod.string(),
+  email: zod.string().nullish(),
+});
+
+/**
+ * @summary Change own password (authenticated)
+ */
+export const ChangePasswordBody = zod.object({
+  currentPassword: zod.string(),
+  newPassword: zod.string(),
+});
+
+export const ChangePasswordResponse = zod.object({
   success: zod.boolean(),
   message: zod.string().optional(),
 });
@@ -76,6 +100,8 @@ export const GetCurrentUserResponse = zod.object({
     "cad_payment",
     "financial_control",
   ]),
+  status: zod.enum(["pending", "active"]),
+  mustChangePassword: zod.boolean(),
   departmentId: zod.number().nullish(),
   departmentName: zod.string().nullish(),
   employeeId: zod.number().nullish(),
@@ -332,6 +358,8 @@ export const ListUsersResponse = zod.object({
         "cad_payment",
         "financial_control",
       ]),
+      status: zod.enum(["pending", "active"]),
+      mustChangePassword: zod.boolean(),
       departmentId: zod.number().nullish(),
       departmentName: zod.string().nullish(),
       employeeId: zod.number().nullish(),
@@ -381,6 +409,8 @@ export const GetUserResponse = zod.object({
     "cad_payment",
     "financial_control",
   ]),
+  status: zod.enum(["pending", "active"]),
+  mustChangePassword: zod.boolean(),
   departmentId: zod.number().nullish(),
   departmentName: zod.string().nullish(),
   employeeId: zod.number().nullish(),
@@ -398,6 +428,7 @@ export const UpdateUserBody = zod.object({
   fullName: zod.string().nullish(),
   email: zod.string().nullish(),
   role: zod.string().nullish(),
+  status: zod.enum(["pending", "active"]).nullish(),
   departmentId: zod.number().nullish(),
   employeeId: zod.number().nullish(),
   password: zod.string().nullish(),
@@ -420,6 +451,8 @@ export const UpdateUserResponse = zod.object({
     "cad_payment",
     "financial_control",
   ]),
+  status: zod.enum(["pending", "active"]),
+  mustChangePassword: zod.boolean(),
   departmentId: zod.number().nullish(),
   departmentName: zod.string().nullish(),
   employeeId: zod.number().nullish(),
@@ -431,6 +464,18 @@ export const UpdateUserResponse = zod.object({
  */
 export const DeleteUserParams = zod.object({
   id: zod.coerce.number(),
+});
+
+/**
+ * @summary Reset a user password to default (admin only)
+ */
+export const ResetUserPasswordParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ResetUserPasswordResponse = zod.object({
+  success: zod.boolean(),
+  message: zod.string().optional(),
 });
 
 /**

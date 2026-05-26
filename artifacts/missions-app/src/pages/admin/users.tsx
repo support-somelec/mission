@@ -1,7 +1,14 @@
 import { useState } from "react";
-import { useListUsers, useCreateUser, useUpdateUser, useDeleteUser, useListDepartments } from "@workspace/api-client-react";
+import {
+  useListUsers,
+  useCreateUser,
+  useUpdateUser,
+  useDeleteUser,
+  useListDepartments,
+  useResetUserPassword,
+} from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { Search, Filter, ShieldAlert, UserCog, Plus, Edit, Trash2 } from "lucide-react";
+import { Search, Filter, ShieldAlert, UserCog, Plus, Edit, Trash2, RotateCcw, Clock } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -49,6 +56,8 @@ type UserRow = {
   fullName: string;
   email: string | null;
   role: string;
+  status: string;
+  mustChangePassword: boolean;
   departmentId: number | null;
   departmentName: string | null;
   createdAt: string;
@@ -84,6 +93,7 @@ export default function AdminUsers() {
   const [editingUser, setEditingUser] = useState<UserRow | null>(null);
   const [form, setForm] = useState<FormData>(emptyForm);
   const [deleteUser, setDeleteUser] = useState<UserRow | null>(null);
+  const [resetUser, setResetUser] = useState<UserRow | null>(null);
 
   const { data, isLoading } = useListUsers({
     page,
@@ -94,10 +104,12 @@ export default function AdminUsers() {
 
   const { data: deptsData } = useListDepartments({ limit: 100 });
 
+  const invalidateUsers = () => queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+
   const createMutation = useCreateUser({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+        invalidateUsers();
         setDialogOpen(false);
         setForm(emptyForm);
         toast({ title: "Utilisateur créé avec succès" });
@@ -112,7 +124,7 @@ export default function AdminUsers() {
   const updateMutation = useUpdateUser({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+        invalidateUsers();
         setDialogOpen(false);
         setEditingUser(null);
         setForm(emptyForm);
@@ -128,9 +140,23 @@ export default function AdminUsers() {
   const deleteMutation = useDeleteUser({
     mutation: {
       onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["/api/users"] });
+        invalidateUsers();
         setDeleteUser(null);
         toast({ title: "Utilisateur supprimé" });
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const resetPasswordMutation = useResetUserPassword({
+    mutation: {
+      onSuccess: (res) => {
+        invalidateUsers();
+        setResetUser(null);
+        toast({ title: res.message ?? "Mot de passe réinitialisé" });
       },
       onError: (err: unknown) => {
         const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
@@ -160,17 +186,26 @@ export default function AdminUsers() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const deptId = form.departmentId ? parseInt(form.departmentId) : null;
     const payload = {
       username: form.username,
       fullName: form.fullName,
       email: form.email || undefined,
-      role: form.role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad" | "financial_control" | "drh",
-      departmentId: form.departmentId ? parseInt(form.departmentId) : undefined,
+      role: form.role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control",
+      departmentId: deptId ?? undefined,
       password: form.password || undefined,
     };
 
     if (editingUser) {
-      updateMutation.mutate({ id: editingUser.id, data: payload });
+      const isPending = editingUser.status === "pending";
+      const assigningDept = deptId !== null && deptId !== editingUser.departmentId;
+      updateMutation.mutate({
+        id: editingUser.id,
+        data: {
+          ...payload,
+          status: isPending && assigningDept ? "active" : undefined,
+        },
+      });
     } else {
       if (!form.password) {
         toast({ title: "Erreur", description: "Le mot de passe est requis", variant: "destructive" });
@@ -183,6 +218,11 @@ export default function AdminUsers() {
   const handleDelete = () => {
     if (!deleteUser) return;
     deleteMutation.mutate({ id: deleteUser.id });
+  };
+
+  const handleResetPassword = () => {
+    if (!resetUser) return;
+    resetPasswordMutation.mutate({ id: resetUser.id });
   };
 
   const getRoleColor = (roleStr: string) => {
@@ -201,12 +241,22 @@ export default function AdminUsers() {
 
   const isSaving = createMutation.isPending || updateMutation.isPending;
 
+  const pendingCount = data?.data?.filter((u) => (u as UserRow).status === "pending").length ?? 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Utilisateurs du Système</h1>
-          <p className="text-muted-foreground">Gérez les accès, les rôles de validation et les identifiants.</p>
+          <p className="text-muted-foreground">
+            Gérez les accès, les rôles de validation et les identifiants.
+            {pendingCount > 0 && (
+              <span className="ml-2 inline-flex items-center gap-1 text-amber-700 font-medium">
+                <Clock className="w-3.5 h-3.5" />
+                {pendingCount} compte{pendingCount > 1 ? "s" : ""} en attente
+              </span>
+            )}
+          </p>
         </div>
         <Button onClick={openCreate}>
           <Plus className="w-4 h-4 mr-2" /> Nouvel Utilisateur
@@ -249,7 +299,7 @@ export default function AdminUsers() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Utilisateur</TableHead>
-                  <TableHead>Rôle Système</TableHead>
+                  <TableHead>Rôle / Statut</TableHead>
                   <TableHead>Département</TableHead>
                   <TableHead>Créé le</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
@@ -267,37 +317,68 @@ export default function AdminUsers() {
                     </TableRow>
                   ))
                 ) : data?.data && data.data.length > 0 ? (
-                  data.data.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell>
-                        <div className="font-medium">{user.fullName}</div>
-                        <div className="text-xs text-muted-foreground font-mono">@{user.username}</div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`font-medium text-xs ${getRoleColor(user.role)}`}>
-                          {user.role === "admin" && <ShieldAlert className="w-3 h-3 mr-1" />}
-                          {ROLE_LABELS[user.role] || user.role}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm">{(user as UserRow).departmentName || "-"}</TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{formatDate(user.createdAt)}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" onClick={() => openEdit(user as UserRow)}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                            onClick={() => setDeleteUser(user as UserRow)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  data.data.map((user) => {
+                    const u = user as UserRow;
+                    const isPending = u.status === "pending";
+                    return (
+                      <TableRow key={u.id} className={isPending ? "bg-amber-50/50" : ""}>
+                        <TableCell>
+                          <div className="font-medium">{u.fullName}</div>
+                          <div className="text-xs text-muted-foreground font-mono">@{u.username}</div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-1">
+                            <Badge variant="outline" className={`font-medium text-xs w-fit ${getRoleColor(u.role)}`}>
+                              {u.role === "admin" && <ShieldAlert className="w-3 h-3 mr-1" />}
+                              {ROLE_LABELS[u.role] || u.role}
+                            </Badge>
+                            {isPending && (
+                              <Badge variant="outline" className="font-medium text-xs w-fit bg-amber-50 text-amber-700 border-amber-300">
+                                <Clock className="w-3 h-3 mr-1" />
+                                En attente
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm">{u.departmentName || "-"}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{formatDate(u.createdAt)}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            {isPending && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-xs text-amber-700 border-amber-300 hover:bg-amber-50"
+                                onClick={() => openEdit(u)}
+                              >
+                                Affecter
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => openEdit(u)} title="Modifier">
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Réinitialiser mot de passe"
+                              onClick={() => setResetUser(u)}
+                            >
+                              <RotateCcw className="w-4 h-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                              onClick={() => setDeleteUser(u)}
+                              title="Supprimer"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
@@ -327,6 +408,7 @@ export default function AdminUsers() {
         </CardContent>
       </Card>
 
+      {/* Create / Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); setEditingUser(null); setForm(emptyForm); } }}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -335,7 +417,11 @@ export default function AdminUsers() {
               {editingUser ? "Modifier l'utilisateur" : "Nouvel utilisateur"}
             </DialogTitle>
             <DialogDescription>
-              {editingUser ? "Modifiez les informations de l'utilisateur." : "Créez un nouveau compte d'accès au système."}
+              {editingUser?.status === "pending"
+                ? "Ce compte est en attente. Affectez un département pour l'activer automatiquement."
+                : editingUser
+                ? "Modifiez les informations de l'utilisateur."
+                : "Créez un nouveau compte d'accès au système."}
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -387,7 +473,12 @@ export default function AdminUsers() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="department">Département</Label>
+                <Label htmlFor="department">
+                  Département
+                  {editingUser?.status === "pending" && (
+                    <span className="ml-1 text-amber-600 font-medium">(requis pour activer)</span>
+                  )}
+                </Label>
                 <Select value={form.departmentId} onValueChange={(v) => setForm(f => ({ ...f, departmentId: v === "none" ? "" : v }))}>
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Aucun" />
@@ -420,13 +511,20 @@ export default function AdminUsers() {
                 Annuler
               </Button>
               <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Enregistrement..." : editingUser ? "Mettre à jour" : "Créer l'utilisateur"}
+                {isSaving
+                  ? "Enregistrement..."
+                  : editingUser?.status === "pending"
+                  ? "Activer & Enregistrer"
+                  : editingUser
+                  ? "Mettre à jour"
+                  : "Créer l'utilisateur"}
               </Button>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
 
+      {/* Delete confirmation */}
       <AlertDialog open={!!deleteUser} onOpenChange={(open) => { if (!open) setDeleteUser(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -444,6 +542,25 @@ export default function AdminUsers() {
               disabled={deleteMutation.isPending}
             >
               {deleteMutation.isPending ? "Suppression..." : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reset password confirmation */}
+      <AlertDialog open={!!resetUser} onOpenChange={(open) => { if (!open) setResetUser(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Réinitialiser le mot de passe</AlertDialogTitle>
+            <AlertDialogDescription>
+              Le mot de passe de <strong>{resetUser?.fullName}</strong> sera réinitialisé au mot de passe
+              par défaut (<strong>Somelec@2024</strong>). L'utilisateur devra le changer lors de sa prochaine connexion.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetPassword} disabled={resetPasswordMutation.isPending}>
+              {resetPasswordMutation.isPending ? "Réinitialisation..." : "Réinitialiser"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

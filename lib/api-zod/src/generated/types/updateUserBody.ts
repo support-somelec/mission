@@ -5,6 +5,7 @@
  * SOMELEC Mission Management System API
  * OpenAPI spec version: 0.1.0
  */
+import type { UpdateUserBodyStatus } from "./updateUserBodyStatus";
 
 export interface UpdateUserBody {
   /** @nullable */
@@ -13,6 +14,8 @@ export interface UpdateUserBody {
   email?: string | null;
   /** @nullable */
   role?: string | null;
+  /** @nullable */
+  status?: UpdateUserBodyStatus;
   /** @nullable */
   departmentId?: number | null;
   /** @nullable */

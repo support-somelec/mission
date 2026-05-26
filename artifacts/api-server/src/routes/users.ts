@@ -8,9 +8,11 @@ import {
   UpdateUserParams,
   DeleteUserParams,
   ListUsersQueryParams,
+  ResetUserPasswordParams,
 } from "@workspace/api-zod";
 import { requireAuth, requireAdmin } from "../middlewares/session";
 import { hashPassword } from "../lib/auth";
+import { DEFAULT_PASSWORD } from "./auth";
 
 const router: IRouter = Router();
 
@@ -147,6 +149,7 @@ router.patch("/users/:id", requireAuth, requireAdmin, async (req, res): Promise<
   if (parsed.data.fullName != null) updateData.fullName = parsed.data.fullName;
   if ("email" in parsed.data) updateData.email = parsed.data.email;
   if (parsed.data.role != null) updateData.role = parsed.data.role;
+  if (parsed.data.status != null) updateData.status = parsed.data.status;
   if ("departmentId" in parsed.data) updateData.departmentId = parsed.data.departmentId;
   if ("employeeId" in parsed.data) updateData.employeeId = parsed.data.employeeId;
   if (parsed.data.password != null) updateData.passwordHash = hashPassword(parsed.data.password);
@@ -184,6 +187,27 @@ router.delete("/users/:id", requireAuth, requireAdmin, async (req, res): Promise
   }
 
   res.sendStatus(204);
+});
+
+router.post("/users/:id/reset-password", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  const params = ResetUserPasswordParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [user] = await db
+    .update(usersTable)
+    .set({ passwordHash: hashPassword(DEFAULT_PASSWORD), mustChangePassword: true })
+    .where(eq(usersTable.id, params.data.id))
+    .returning({ id: usersTable.id });
+
+  if (!user) {
+    res.status(404).json({ error: "Utilisateur non trouvé" });
+    return;
+  }
+
+  res.json({ success: true, message: `Mot de passe réinitialisé à la valeur par défaut (${DEFAULT_PASSWORD})` });
 });
 
 export default router;
