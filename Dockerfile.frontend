@@ -21,7 +21,6 @@ RUN pnpm install --frozen-lockfile
 # Source files
 COPY lib/               lib/
 COPY artifacts/missions-app/ artifacts/missions-app/
-COPY attached_assets/   attached_assets/ 2>/dev/null || true
 
 # Build composite libs
 RUN pnpm run typecheck:libs
