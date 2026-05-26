@@ -1,0 +1,81 @@
+[root@aaPanel ~]# docker logs --tail 80 somelec-api-1
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs
+==> Applying database migrations...
+Reading config file '/app/lib/db/drizzle.config.ts'
+Cannot find module 'drizzle-kit'
+Require stack:
+- /app/lib/db/drizzle.config.ts
+- /usr/local/lib/node_modules/drizzle-kit/bin.cjs

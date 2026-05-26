@@ -33,9 +33,10 @@ WORKDIR /app
 # Install drizzle-kit globally (bundles its own TS parser)
 RUN npm install -g drizzle-kit
 
-# Set up the db package with only what drizzle-kit needs at runtime
+# Set up the db package with all deps drizzle-kit needs at runtime
+# drizzle-kit must also be local so drizzle.config.ts can import it
 WORKDIR /app/lib/db
-RUN npm install drizzle-orm pg
+RUN npm install drizzle-orm pg drizzle-kit
 
 # Copy schema source and config (drizzle-kit reads these to push schema)
 COPY --from=builder /app/lib/db/src ./src
