@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   useGetDashboardStats,
   useGetPendingValidations,
@@ -15,13 +15,16 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/hooks/use-auth";
 import { Link } from "wouter";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { MISSION_STATUS_LABELS } from "@/lib/constants";
 import {
   Map,
   Clock,
@@ -31,6 +34,8 @@ import {
   ChevronLeft,
   ChevronRight,
   AlertCircle,
+  Search,
+  X,
 } from "lucide-react";
 
 const PAGE_SIZE = 10;
@@ -43,6 +48,19 @@ function formatDate(d: string) {
   }
 }
 
+type MissionRow = {
+  id: number;
+  title: string;
+  destination: string;
+  departmentName?: string | null;
+  startDate: string;
+  endDate: string;
+  status: string;
+  orderNumber?: string | null;
+  createdByName?: string | null;
+  durationDays?: number;
+};
+
 function MissionsTable({
   missions,
   isLoading,
@@ -51,19 +69,7 @@ function MissionsTable({
   total,
   onPage,
 }: {
-  missions: {
-    id: number;
-    title: string;
-    destination: string;
-    departmentName?: string | null;
-    startDate: string;
-    endDate: string;
-    status: string;
-    orderNumber?: string | null;
-    createdByName?: string | null;
-    employeeCount?: number;
-    durationDays?: number;
-  }[];
+  missions: MissionRow[];
   isLoading: boolean;
   page: number;
   totalPages: number;
@@ -72,7 +78,7 @@ function MissionsTable({
 }) {
   if (isLoading) {
     return (
-      <div className="space-y-2 p-4">
+      <div className="space-y-2 p-2">
         {Array.from({ length: 5 }).map((_, i) => (
           <Skeleton key={i} className="h-12 w-full" />
         ))}
@@ -98,19 +104,19 @@ function MissionsTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[130px]">N° / OM</TableHead>
+              <TableHead className="w-[120px]">Référence</TableHead>
               <TableHead>Titre</TableHead>
               <TableHead>Destination</TableHead>
               <TableHead>Direction</TableHead>
               <TableHead>Dates</TableHead>
-              <TableHead className="text-center">Durée</TableHead>
+              <TableHead className="text-center w-[70px]">Durée</TableHead>
               <TableHead>Statut</TableHead>
-              <TableHead className="text-right">Action</TableHead>
+              <TableHead className="text-right w-[60px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
             {missions.map((m) => (
-              <TableRow key={m.id}>
+              <TableRow key={m.id} className="hover:bg-muted/50">
                 <TableCell className="font-mono text-xs">
                   {m.orderNumber ? (
                     <span className="text-primary font-semibold">{m.orderNumber}</span>
@@ -119,21 +125,21 @@ function MissionsTable({
                   )}
                 </TableCell>
                 <TableCell>
-                  <div className="font-medium text-sm leading-tight max-w-[220px] truncate">{m.title}</div>
+                  <div className="font-medium text-sm leading-tight max-w-[200px] truncate">{m.title}</div>
                   {m.createdByName && (
                     <div className="text-xs text-muted-foreground truncate">{m.createdByName}</div>
                   )}
                 </TableCell>
                 <TableCell className="text-sm">{m.destination}</TableCell>
-                <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">
-                  {m.departmentName || "-"}
+                <TableCell className="text-sm text-muted-foreground max-w-[130px] truncate">
+                  {m.departmentName || "—"}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
                   {formatDate(m.startDate)}<br />→ {formatDate(m.endDate)}
                 </TableCell>
                 <TableCell className="text-center">
-                  <Badge variant="secondary" className="text-xs">
-                    {m.durationDays ?? "-"} j
+                  <Badge variant="secondary" className="text-xs tabular-nums">
+                    {m.durationDays ?? "—"} j
                   </Badge>
                 </TableCell>
                 <TableCell>
@@ -158,25 +164,13 @@ function MissionsTable({
             {from}–{to} sur {total} mission{total > 1 ? "s" : ""}
           </p>
           <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page === 1}
-              onClick={() => onPage(page - 1)}
-            >
+            <Button variant="outline" size="icon" className="h-8 w-8"
+              disabled={page === 1} onClick={() => onPage(page - 1)}>
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <span className="text-sm px-2">
-              {page} / {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-              disabled={page === totalPages}
-              onClick={() => onPage(page + 1)}
-            >
+            <span className="text-sm px-2 tabular-nums">{page} / {totalPages}</span>
+            <Button variant="outline" size="icon" className="h-8 w-8"
+              disabled={page === totalPages} onClick={() => onPage(page + 1)}>
               <ChevronRight className="w-4 h-4" />
             </Button>
           </div>
@@ -188,22 +182,53 @@ function MissionsTable({
 
 export default function Dashboard() {
   const { user } = useAuth();
+
   const [allPage, setAllPage] = useState(1);
+  const [allSearch, setAllSearch] = useState("");
+  const [allStatus, setAllStatus] = useState("all");
+
   const [pendingPage, setPendingPage] = useState(1);
+  const [pendingSearch, setPendingSearch] = useState("");
 
   const { data: stats, isLoading: statsLoading } = useGetDashboardStats();
 
   const { data: allMissions, isLoading: allLoading } = useListMissions({
     page: allPage,
     limit: PAGE_SIZE,
+    search: allSearch || undefined,
+    status: allStatus !== "all" ? allStatus : undefined,
   });
 
   const { data: pendingData, isLoading: pendingLoading } = useGetPendingValidations({
-    page: pendingPage,
-    limit: PAGE_SIZE,
+    page: 1,
+    limit: 200,
   });
 
+  const filteredPending = useMemo(() => {
+    const rows = pendingData?.data ?? [];
+    if (!pendingSearch.trim()) return rows;
+    const q = pendingSearch.toLowerCase();
+    return rows.filter(
+      (m) =>
+        m.title.toLowerCase().includes(q) ||
+        m.destination.toLowerCase().includes(q) ||
+        (m.departmentName ?? "").toLowerCase().includes(q) ||
+        (m.createdByName ?? "").toLowerCase().includes(q)
+    );
+  }, [pendingData, pendingSearch]);
+
+  const pendingPageSize = PAGE_SIZE;
+  const pendingTotalPages = Math.ceil(filteredPending.length / pendingPageSize);
+  const pendingPagedRows = filteredPending.slice(
+    (pendingPage - 1) * pendingPageSize,
+    pendingPage * pendingPageSize
+  );
+
   const pendingCount = pendingData?.total ?? 0;
+
+  const handleAllSearch = (v: string) => { setAllSearch(v); setAllPage(1); };
+  const handleAllStatus = (v: string) => { setAllStatus(v); setAllPage(1); };
+  const handlePendingSearch = (v: string) => { setPendingSearch(v); setPendingPage(1); };
 
   return (
     <div className="space-y-6">
@@ -217,26 +242,10 @@ export default function Dashboard() {
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         {[
-          {
-            label: "Missions Totales",
-            value: stats?.totalMissions,
-            icon: <Map className="h-4 w-4 text-muted-foreground" />,
-          },
-          {
-            label: "En Attente de Validation",
-            value: stats?.pendingValidations,
-            icon: <Clock className="h-4 w-4 text-amber-500" />,
-          },
-          {
-            label: "Missions Approuvées",
-            value: stats?.approvedMissions,
-            icon: <CheckCircle className="h-4 w-4 text-emerald-500" />,
-          },
-          {
-            label: "Missions Rejetées",
-            value: stats?.rejectedMissions,
-            icon: <XCircle className="h-4 w-4 text-destructive" />,
-          },
+          { label: "Missions Totales", value: stats?.totalMissions, icon: <Map className="h-4 w-4 text-muted-foreground" /> },
+          { label: "En Attente de Validation", value: stats?.pendingValidations, icon: <Clock className="h-4 w-4 text-amber-500" /> },
+          { label: "Missions Approuvées", value: stats?.approvedMissions, icon: <CheckCircle className="h-4 w-4 text-emerald-500" /> },
+          { label: "Missions Rejetées", value: stats?.rejectedMissions, icon: <XCircle className="h-4 w-4 text-destructive" /> },
         ].map(({ label, value, icon }) => (
           <Card key={label}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -244,9 +253,7 @@ export default function Dashboard() {
               {icon}
             </CardHeader>
             <CardContent>
-              {statsLoading ? (
-                <Skeleton className="h-7 w-20" />
-              ) : (
+              {statsLoading ? <Skeleton className="h-7 w-20" /> : (
                 <div className="text-2xl font-bold">{value ?? 0}</div>
               )}
             </CardContent>
@@ -260,29 +267,55 @@ export default function Dashboard() {
           <TabsTrigger value="all">
             Toutes les missions
             {allMissions?.total != null && (
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {allMissions.total}
-              </Badge>
+              <Badge variant="secondary" className="ml-2 text-xs">{allMissions.total}</Badge>
             )}
           </TabsTrigger>
           <TabsTrigger value="pending">
             <span className="flex items-center gap-1.5">
-              {pendingCount > 0 && (
-                <AlertCircle className="w-3.5 h-3.5 text-amber-500" />
-              )}
+              {pendingCount > 0 && <AlertCircle className="w-3.5 h-3.5 text-amber-500" />}
               À valider
               {pendingCount > 0 && (
-                <Badge className="ml-1 text-xs bg-amber-500 text-white">
-                  {pendingCount}
-                </Badge>
+                <Badge className="ml-1 text-xs bg-amber-500 text-white">{pendingCount}</Badge>
               )}
             </span>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="mt-4">
+        {/* All missions tab */}
+        <TabsContent value="all" className="mt-4 space-y-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Titre, destination..."
+                className="pl-8 pr-8"
+                value={allSearch}
+                onChange={(e) => handleAllSearch(e.target.value)}
+              />
+              {allSearch && (
+                <button
+                  onClick={() => handleAllSearch("")}
+                  className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+            <Select value={allStatus} onValueChange={handleAllStatus}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue placeholder="Tous les statuts" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tous les statuts</SelectItem>
+                {Object.entries(MISSION_STATUS_LABELS).map(([key, label]) => (
+                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <MissionsTable
-            missions={(allMissions?.data ?? []) as Parameters<typeof MissionsTable>[0]["missions"]}
+            missions={(allMissions?.data ?? []) as MissionRow[]}
             isLoading={allLoading}
             page={allPage}
             totalPages={allMissions?.totalPages ?? 1}
@@ -291,13 +324,32 @@ export default function Dashboard() {
           />
         </TabsContent>
 
-        <TabsContent value="pending" className="mt-4">
+        {/* Pending validation tab */}
+        <TabsContent value="pending" className="mt-4 space-y-4">
+          <div className="relative max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Titre, destination, direction..."
+              className="pl-8 pr-8"
+              value={pendingSearch}
+              onChange={(e) => handlePendingSearch(e.target.value)}
+            />
+            {pendingSearch && (
+              <button
+                onClick={() => handlePendingSearch("")}
+                className="absolute right-2.5 top-2.5 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+
           <MissionsTable
-            missions={(pendingData?.data ?? []) as Parameters<typeof MissionsTable>[0]["missions"]}
+            missions={pendingPagedRows as MissionRow[]}
             isLoading={pendingLoading}
             page={pendingPage}
-            totalPages={pendingData?.totalPages ?? 1}
-            total={pendingData?.total ?? 0}
+            totalPages={pendingTotalPages || 1}
+            total={filteredPending.length}
             onPage={setPendingPage}
           />
         </TabsContent>
