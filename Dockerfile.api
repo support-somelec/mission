@@ -3,7 +3,7 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN npm install -g pnpm@10.26.1
 
 # Workspace manifests (better layer caching)
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./

@@ -1,0 +1,51 @@
+=> ERROR [api builder 11/15] RUN pnpm install --frozen-lockfile                     30.1s
+ => CANCELED [frontend builder 11/15] RUN pnpm install --frozen-lockfile             32.5s
+------
+ > [api builder 11/15] RUN pnpm install --frozen-lockfile:
+1.055 Scope: all 6 workspace projects
+1.214 ? Verifying lockfile against supply-chain policies (498 entries)...
+14.49 ✓ Lockfile passes supply-chain policies (498 entries in 13.2s)
+14.50 Lockfile is up to date, resolution step is skipped
+14.59 Progress: resolved 1, reused 0, downloaded 0, added 0
+14.62 Packages: +273
+14.62 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+15.59 Progress: resolved 273, reused 0, downloaded 65, added 54
+16.59 Progress: resolved 273, reused 0, downloaded 128, added 109
+17.59 Progress: resolved 273, reused 0, downloaded 143, added 128
+18.60 Progress: resolved 273, reused 0, downloaded 167, added 137
+19.60 Progress: resolved 273, reused 0, downloaded 182, added 157
+20.60 Progress: resolved 273, reused 0, downloaded 198, added 182
+21.60 Progress: resolved 273, reused 0, downloaded 229, added 199
+22.60 Progress: resolved 273, reused 0, downloaded 253, added 215
+23.61 Progress: resolved 273, reused 0, downloaded 273, added 230
+24.39 Progress: resolved 273, reused 0, downloaded 273, added 273, done
+25.07 
+25.07 devDependencies:
+25.07 + prettier 3.8.1
+25.07 + typescript 5.9.3
+25.07 
+25.09 . preinstall$ sh -c 'rm -f package-lock.json yarn.lock; case "$npm_config_user_agent" in pnpm/*) ;; *) echo "Use pnpm instead" >&2; exit 1 ;; esac'
+25.13 . preinstall: Use pnpm instead
+25.16 . preinstall: Failed
+25.17 [ELIFECYCLE] Command failed with exit code 1.
+------
+[+] up 0/2
+ ⠙ Image somelec-api      Building                                                    49.8s
+ ⠙ Image somelec-frontend Building                                                    49.8s
+Dockerfile.api:18
+
+--------------------
+
+  16 |     COPY artifacts/api-server/package.json  artifacts/api-server/
+
+  17 |     
+
+  18 | >>> RUN pnpm install --frozen-lockfile
+
+  19 |     
+
+  20 |     COPY lib/               lib/
+
+--------------------
+
+target api: failed to solve: process "/bin/sh -c pnpm install --frozen-lockfile" did not complete successfully: exit code: 1
