@@ -7,5 +7,4 @@ pnpm run push
 echo "==> Migrations done."
 
 echo "==> Starting API server..."
-cd /app
-exec node --enable-source-maps ./dist/index.mjs
+exec node --enable-source-maps /app/artifacts/api-server/dist/index.mjs
