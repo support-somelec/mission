@@ -576,5 +576,10 @@ export type GetPendingValidationsParams = {
 
 export type GetReportingParams = {
   year?: number;
+  /**
+   * @minimum 1
+   * @maximum 12
+   */
+  month?: number;
   departmentId?: number;
 };

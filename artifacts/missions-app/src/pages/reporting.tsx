@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useGetReporting, useListDepartments } from "@workspace/api-client-react";
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
@@ -7,10 +7,26 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, CheckCircle, XCircle, Clock, Users, Building2, BarChart3 } from "lucide-react";
+import { TrendingUp, CheckCircle, XCircle, Clock, Users, Building2, BarChart3, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
+const MONTHS = [
+  { value: "1", label: "Janvier" },
+  { value: "2", label: "Février" },
+  { value: "3", label: "Mars" },
+  { value: "4", label: "Avril" },
+  { value: "5", label: "Mai" },
+  { value: "6", label: "Juin" },
+  { value: "7", label: "Juillet" },
+  { value: "8", label: "Août" },
+  { value: "9", label: "Septembre" },
+  { value: "10", label: "Octobre" },
+  { value: "11", label: "Novembre" },
+  { value: "12", label: "Décembre" },
+];
+
+type SortDir = "asc" | "desc";
 
 function StatCard({
   title,
@@ -40,15 +56,55 @@ function StatCard({
   );
 }
 
+function SortIcon({ col, sortCol, sortDir }: { col: string; sortCol: string; sortDir: SortDir }) {
+  if (col !== sortCol) return <ArrowUpDown className="w-3.5 h-3.5 ml-1 text-muted-foreground/50" />;
+  return sortDir === "desc"
+    ? <ArrowDown className="w-3.5 h-3.5 ml-1 text-primary" />
+    : <ArrowUp className="w-3.5 h-3.5 ml-1 text-primary" />;
+}
+
 export default function Reporting() {
   const [year, setYear] = useState<number>(CURRENT_YEAR);
+  const [month, setMonth] = useState<string>("all");
   const [departmentId, setDepartmentId] = useState<string>("all");
+  const [sortCol, setSortCol] = useState<string>("missionCount");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
   const { data: depts } = useListDepartments({ limit: 100 });
   const { data, isLoading } = useGetReporting({
     year,
+    ...(month !== "all" ? { month: Number(month) } : {}),
     ...(departmentId !== "all" ? { departmentId: Number(departmentId) } : {}),
   });
+
+  const handleSort = (col: string) => {
+    if (sortCol === col) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortCol(col);
+      setSortDir("desc");
+    }
+  };
+
+  const sortedEmployees = useMemo(() => {
+    if (!data?.byEmployee) return [];
+    return [...data.byEmployee].sort((a, b) => {
+      let av: string | number = 0;
+      let bv: string | number = 0;
+      if (sortCol === "missionCount") { av = a.missionCount; bv = b.missionCount; }
+      else if (sortCol === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
+      else if (sortCol === "matricule") { av = a.matricule; bv = b.matricule; }
+      else if (sortCol === "department") { av = a.departmentName; bv = b.departmentName; }
+      if (typeof av === "number" && typeof bv === "number") {
+        return sortDir === "desc" ? bv - av : av - bv;
+      }
+      return sortDir === "desc"
+        ? String(bv).localeCompare(String(av), "fr")
+        : String(av).localeCompare(String(bv), "fr");
+    });
+  }, [data?.byEmployee, sortCol, sortDir]);
+
+  const showMonthChart = month === "all";
 
   return (
     <div className="space-y-6">
@@ -65,16 +121,26 @@ export default function Reporting() {
         </div>
 
         {/* Filtres */}
-        <div className="flex gap-3 flex-wrap">
+        <div className="flex gap-2 flex-wrap">
           <Select value={String(year)} onValueChange={(v) => setYear(Number(v))}>
-            <SelectTrigger className="w-32">
+            <SelectTrigger className="w-28">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {YEARS.map((y) => (
-                <SelectItem key={y} value={String(y)}>
-                  {y}
-                </SelectItem>
+                <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={month} onValueChange={setMonth}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="Tous les mois" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les mois</SelectItem>
+              {MONTHS.map((m) => (
+                <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -86,9 +152,7 @@ export default function Reporting() {
             <SelectContent>
               <SelectItem value="all">Toutes les directions</SelectItem>
               {depts?.data?.map((d) => (
-                <SelectItem key={d.id} value={String(d.id)}>
-                  {d.name}
-                </SelectItem>
+                <SelectItem key={d.id} value={String(d.id)}>{d.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -103,81 +167,41 @@ export default function Reporting() {
         <>
           {/* KPIs */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard
-              title="Total missions"
-              value={data.totalMissions}
-              icon={TrendingUp}
-              color="bg-blue-500"
-            />
-            <StatCard
-              title="Approuvées"
-              value={data.totalApproved}
-              icon={CheckCircle}
-              color="bg-green-500"
-            />
-            <StatCard
-              title="Rejetées"
-              value={data.totalRejected}
-              icon={XCircle}
-              color="bg-red-500"
-            />
-            <StatCard
-              title="En cours"
-              value={data.totalInProgress}
-              icon={Clock}
-              color="bg-amber-500"
-            />
+            <StatCard title="Total missions" value={data.totalMissions} icon={TrendingUp} color="bg-blue-500" />
+            <StatCard title="Approuvées" value={data.totalApproved} icon={CheckCircle} color="bg-green-500" />
+            <StatCard title="Rejetées" value={data.totalRejected} icon={XCircle} color="bg-red-500" />
+            <StatCard title="En cours" value={data.totalInProgress} icon={Clock} color="bg-amber-500" />
           </div>
 
-          {/* Graphique par mois */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUp className="w-4 h-4 text-primary" />
-                Évolution mensuelle — {year}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={data.byMonth} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="monthLabel"
-                    tick={{ fontSize: 11 }}
-                    tickFormatter={(v: string) => v.substring(0, 3)}
-                  />
-                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <Tooltip />
-                  <Legend wrapperStyle={{ fontSize: 12 }} />
-                  <Line
-                    type="monotone"
-                    dataKey="total"
-                    name="Total"
-                    stroke="#3b82f6"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                    activeDot={{ r: 5 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="approved"
-                    name="Approuvées"
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="rejected"
-                    name="Rejetées"
-                    stroke="#ef4444"
-                    strokeWidth={2}
-                    dot={{ r: 3 }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          {/* Graphique par mois — masqué si un mois spécifique est sélectionné */}
+          {showMonthChart && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  Évolution mensuelle — {year}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={data.byMonth} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis
+                      dataKey="monthLabel"
+                      tick={{ fontSize: 11 }}
+                      tickFormatter={(v: string) => v.substring(0, 3)}
+                    />
+                    <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <Tooltip />
+                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Line type="monotone" dataKey="total" name="Total" stroke="#3b82f6" strokeWidth={2} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="approved" name="Approuvées" stroke="#22c55e" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="rejected" name="Rejetées" stroke="#ef4444" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Graphique par direction */}
           <Card>
@@ -185,6 +209,11 @@ export default function Reporting() {
               <CardTitle className="flex items-center gap-2 text-base">
                 <Building2 className="w-4 h-4 text-primary" />
                 Missions par direction
+                {month !== "all" && (
+                  <span className="text-xs font-normal text-muted-foreground ml-1">
+                    — {MONTHS.find((m) => m.value === month)?.label} {year}
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -194,22 +223,13 @@ export default function Reporting() {
                 </p>
               ) : (
                 <ResponsiveContainer width="100%" height={Math.max(260, data.byDepartment.length * 44)}>
-                  <BarChart
-                    layout="vertical"
-                    data={data.byDepartment}
-                    margin={{ top: 4, right: 24, left: 8, bottom: 4 }}
-                  >
+                  <BarChart layout="vertical" data={data.byDepartment} margin={{ top: 4, right: 24, left: 8, bottom: 4 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" horizontal={false} />
                     <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                    <YAxis
-                      type="category"
-                      dataKey="departmentName"
-                      tick={{ fontSize: 11 }}
-                      width={160}
-                    />
+                    <YAxis type="category" dataKey="departmentName" tick={{ fontSize: 11 }} width={160} />
                     <Tooltip />
                     <Legend wrapperStyle={{ fontSize: 12 }} />
-                    <Bar dataKey="approved" name="Approuvées" stackId="a" fill="#22c55e" radius={[0, 0, 0, 0]} />
+                    <Bar dataKey="approved" name="Approuvées" stackId="a" fill="#22c55e" />
                     <Bar dataKey="rejected" name="Rejetées" stackId="a" fill="#ef4444" />
                     <Bar dataKey="inProgress" name="En cours" stackId="a" fill="#f59e0b" radius={[0, 4, 4, 0]} />
                   </BarChart>
@@ -218,16 +238,21 @@ export default function Reporting() {
             </CardContent>
           </Card>
 
-          {/* Tableau par agent */}
+          {/* Tableau par agent — triable */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-base">
                 <Users className="w-4 h-4 text-primary" />
                 Top 20 agents — nombre de missions
+                {month !== "all" && (
+                  <span className="text-xs font-normal text-muted-foreground ml-1">
+                    — {MONTHS.find((m) => m.value === month)?.label} {year}
+                  </span>
+                )}
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              {data.byEmployee.length === 0 ? (
+              {sortedEmployees.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-10">
                   Aucune donnée pour cette période
                 </p>
@@ -237,25 +262,49 @@ export default function Reporting() {
                     <thead>
                       <tr className="border-b bg-muted/40">
                         <th className="text-left px-4 py-3 font-medium text-muted-foreground w-8">#</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Agent</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Matricule</th>
-                        <th className="text-left px-4 py-3 font-medium text-muted-foreground">Direction</th>
-                        <th className="text-right px-4 py-3 font-medium text-muted-foreground">Missions</th>
+                        <th
+                          className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                          onClick={() => handleSort("name")}
+                        >
+                          <span className="flex items-center">
+                            Agent <SortIcon col="name" sortCol={sortCol} sortDir={sortDir} />
+                          </span>
+                        </th>
+                        <th
+                          className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                          onClick={() => handleSort("matricule")}
+                        >
+                          <span className="flex items-center">
+                            Matricule <SortIcon col="matricule" sortCol={sortCol} sortDir={sortDir} />
+                          </span>
+                        </th>
+                        <th
+                          className="text-left px-4 py-3 font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                          onClick={() => handleSort("department")}
+                        >
+                          <span className="flex items-center">
+                            Direction <SortIcon col="department" sortCol={sortCol} sortDir={sortDir} />
+                          </span>
+                        </th>
+                        <th
+                          className="text-right px-4 py-3 font-medium text-muted-foreground cursor-pointer hover:text-foreground select-none"
+                          onClick={() => handleSort("missionCount")}
+                        >
+                          <span className="flex items-center justify-end">
+                            Missions <SortIcon col="missionCount" sortCol={sortCol} sortDir={sortDir} />
+                          </span>
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {data.byEmployee.map((emp, idx) => (
+                      {sortedEmployees.map((emp, idx) => (
                         <tr key={emp.employeeId} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                          <td className="px-4 py-3 font-medium">
-                            {emp.firstName} {emp.lastName}
-                          </td>
-                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">
-                            {emp.matricule}
-                          </td>
+                          <td className="px-4 py-3 font-medium">{emp.firstName} {emp.lastName}</td>
+                          <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{emp.matricule}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">{emp.departmentName}</td>
                           <td className="px-4 py-3 text-right">
-                            <Badge variant={idx === 0 ? "default" : "secondary"}>
+                            <Badge variant={sortCol === "missionCount" && sortDir === "desc" && idx === 0 ? "default" : "secondary"}>
                               {emp.missionCount}
                             </Badge>
                           </td>

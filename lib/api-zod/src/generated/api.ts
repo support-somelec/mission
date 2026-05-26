@@ -1200,8 +1200,11 @@ export const GetRecentMissionsResponse = zod.array(
 /**
  * @summary Get reporting data (admin and DGA only)
  */
+export const getReportingQueryMonthMax = 12;
+
 export const GetReportingQueryParams = zod.object({
   year: zod.coerce.number().optional(),
+  month: zod.coerce.number().min(1).max(getReportingQueryMonthMax).optional(),
   departmentId: zod.coerce.number().optional(),
 });
 

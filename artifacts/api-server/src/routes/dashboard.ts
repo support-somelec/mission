@@ -264,6 +264,7 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
   }
 
   const yearParam = req.query.year ? Number(req.query.year) : new Date().getFullYear();
+  const monthParam = req.query.month ? Number(req.query.month) : undefined;
   const departmentIdParam = req.query.departmentId ? Number(req.query.departmentId) : undefined;
 
   const yearStart = new Date(`${yearParam}-01-01T00:00:00.000Z`);
@@ -275,6 +276,12 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
     ...(departmentIdParam ? [eq(missionsTable.departmentId, departmentIdParam)] : []),
   ];
 
+  // Month filter applies to KPIs, byDepartment and byEmployee (not byMonth chart)
+  const withMonthConditions = [
+    ...baseConditions,
+    ...(monthParam ? [sql`EXTRACT(MONTH FROM ${missionsTable.createdAt})::int = ${monthParam}`] : []),
+  ];
+
   // ── Par direction ─────────────────────────────────────────────────────────
   const byDeptRaw = await db
     .select({
@@ -283,7 +290,7 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
       count: sql<number>`count(*)::int`,
     })
     .from(missionsTable)
-    .where(and(...baseConditions))
+    .where(and(...withMonthConditions))
     .groupBy(missionsTable.departmentId, missionsTable.status);
 
   const deptIds = [...new Set(byDeptRaw.filter(r => r.departmentId).map(r => r.departmentId!))];
@@ -342,7 +349,7 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
     })
     .from(missionEmployeesTable)
     .innerJoin(missionsTable, eq(missionEmployeesTable.missionId, missionsTable.id))
-    .where(and(...baseConditions))
+    .where(and(...withMonthConditions))
     .groupBy(missionEmployeesTable.employeeId)
     .orderBy(sql`count(distinct ${missionEmployeesTable.missionId}) DESC`)
     .limit(20);
@@ -380,11 +387,11 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
     };
   });
 
-  // ── Totaux ────────────────────────────────────────────────────────────────
-  const totalMissions = byMonth.reduce((s, m) => s + m.total, 0);
-  const totalApproved = byMonth.reduce((s, m) => s + m.approved, 0);
-  const totalRejected = byMonth.reduce((s, m) => s + m.rejected, 0);
-  const totalInProgress = totalMissions - totalApproved - totalRejected;
+  // ── Totaux (calculés depuis byDepartment pour respecter le filtre mois) ──
+  const totalMissions = byDepartment.reduce((s, d) => s + d.total, 0);
+  const totalApproved = byDepartment.reduce((s, d) => s + d.approved, 0);
+  const totalRejected = byDepartment.reduce((s, d) => s + d.rejected, 0);
+  const totalInProgress = byDepartment.reduce((s, d) => s + d.inProgress, 0);
 
   res.json({ byDepartment, byMonth, byEmployee, totalMissions, totalApproved, totalRejected, totalInProgress });
 });
