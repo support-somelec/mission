@@ -33,7 +33,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
   const navigation = [
     { name: "Tableau de Bord", href: "/dashboard", icon: LayoutDashboard },
     { name: "Missions", href: "/missions", icon: Map },
-    { name: "Employés", href: "/employees", icon: Users },
+    ...(isAdmin ? [{ name: "Employés", href: "/employees", icon: Users }] : []),
   ];
 
   const adminNavigation = isAdmin ? [
