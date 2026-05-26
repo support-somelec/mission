@@ -3,7 +3,7 @@ set -e
 
 echo "==> Applying database migrations..."
 cd /app/lib/db
-node /app/node_modules/.bin/drizzle-kit push --config ./drizzle.config.ts
+drizzle-kit push --config ./drizzle.config.ts
 echo "==> Migrations done."
 
 echo "==> Starting API server..."

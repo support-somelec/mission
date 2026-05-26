@@ -30,12 +30,20 @@ FROM node:24-alpine AS runtime
 
 WORKDIR /app
 
-# The API bundle is a single self-contained file (esbuild)
-COPY --from=builder /app/artifacts/api-server/dist ./dist
+# Install drizzle-kit globally (bundles its own TS parser)
+RUN npm install -g drizzle-kit
 
-# lib/db + root node_modules needed for drizzle-kit migrations at startup
-COPY --from=builder /app/lib/db ./lib/db
-COPY --from=builder /app/node_modules ./node_modules
+# Set up the db package with only what drizzle-kit needs at runtime
+WORKDIR /app/lib/db
+RUN npm install drizzle-orm pg
+
+# Copy schema source and config (drizzle-kit reads these to push schema)
+COPY --from=builder /app/lib/db/src ./src
+COPY --from=builder /app/lib/db/drizzle.config.ts ./drizzle.config.ts
+
+# Copy the API bundle (single self-contained esbuild output)
+WORKDIR /app
+COPY --from=builder /app/artifacts/api-server/dist ./dist
 
 COPY docker/api-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
