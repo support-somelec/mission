@@ -1,5 +1,6 @@
-# ─── Stage 1 : Build ───────────────────────────────────────────────────────────
-FROM node:24 AS builder
+# Image unique : build + runtime dans le même conteneur
+# Plus simple et plus fiable que multi-stage pour les migrations drizzle-kit
+FROM node:24
 
 WORKDIR /app
 
@@ -23,28 +24,6 @@ COPY artifacts/api-server/ artifacts/api-server/
 # Build composite libs then the API bundle (esbuild → dist/index.mjs)
 RUN pnpm run typecheck:libs
 RUN pnpm --filter @workspace/api-server run build
-
-
-# ─── Stage 2 : Runtime ─────────────────────────────────────────────────────────
-FROM node:24-alpine AS runtime
-
-WORKDIR /app
-
-# Install drizzle-kit globally (bundles its own TS parser)
-RUN npm install -g drizzle-kit
-
-# Set up the db package with all deps drizzle-kit needs at runtime
-# drizzle-kit must also be local so drizzle.config.ts can import it
-WORKDIR /app/lib/db
-RUN npm install drizzle-orm pg drizzle-kit
-
-# Copy schema source and config (drizzle-kit reads these to push schema)
-COPY --from=builder /app/lib/db/src ./src
-COPY --from=builder /app/lib/db/drizzle.config.ts ./drizzle.config.ts
-
-# Copy the API bundle (single self-contained esbuild output)
-WORKDIR /app
-COPY --from=builder /app/artifacts/api-server/dist ./dist
 
 COPY docker/api-entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh

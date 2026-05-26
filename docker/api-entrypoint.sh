@@ -3,7 +3,7 @@ set -e
 
 echo "==> Applying database migrations..."
 cd /app/lib/db
-drizzle-kit push --config ./drizzle.config.ts
+pnpm run push
 echo "==> Migrations done."
 
 echo "==> Starting API server..."
