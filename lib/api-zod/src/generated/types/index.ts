@@ -6,6 +6,7 @@
  * OpenAPI spec version: 0.1.0
  */
 
+export * from "./addMissionEmployeeBody";
 export * from "./assignVehiclesBody";
 export * from "./authResponse";
 export * from "./createDepartmentBody";

@@ -17,6 +17,9 @@ import {
   GetMissionPaymentReceiptParams,
   GetMissionEmployeesParams,
   GetMissionValidationsParams,
+  AddMissionEmployeeParams,
+  AddMissionEmployeeBody,
+  RemoveMissionEmployeeParams,
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/session";
 import {
@@ -688,6 +691,83 @@ router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<voi
       ...fees,
       durationDays,
     };
+  });
+
+  res.json(result);
+});
+
+router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<void> => {
+  const params = AddMissionEmployeeParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+
+  if (req.userRole !== "dmg" && req.userRole !== "admin") {
+    res.status(403).json({ error: "Seul le DMG peut modifier les employés d'une mission" });
+    return;
+  }
+
+  const parsed = AddMissionEmployeeBody.safeParse(req.body);
+  if (!parsed.success) { res.status(400).json({ error: parsed.error.message }); return; }
+
+  const [mission] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
+  if (!mission) { res.status(404).json({ error: "Mission non trouvée" }); return; }
+
+  if (mission.status !== "pending_dmg") {
+    res.status(400).json({ error: "Les employés ne peuvent être modifiés qu'à l'étape DMG" });
+    return;
+  }
+
+  const [emp] = await db.select().from(employeesTable).where(eq(employeesTable.id, parsed.data.employeeId));
+  if (!emp) { res.status(404).json({ error: "Employé non trouvé" }); return; }
+
+  const existing = await db.select()
+    .from(missionEmployeesTable)
+    .where(and(eq(missionEmployeesTable.missionId, params.data.id), eq(missionEmployeesTable.employeeId, parsed.data.employeeId)));
+  if (existing.length > 0) {
+    res.status(400).json({ error: "Cet employé est déjà assigné à cette mission" });
+    return;
+  }
+
+  await db.insert(missionEmployeesTable).values({ missionId: params.data.id, employeeId: parsed.data.employeeId });
+
+  const missionEmps = await db.select().from(missionEmployeesTable).where(eq(missionEmployeesTable.missionId, params.data.id));
+  const empIds = missionEmps.map(me => me.employeeId);
+  const employees = empIds.length > 0 ? await db.select().from(employeesTable).where(inArray(employeesTable.id, empIds)) : [];
+  const durationDays = calcDurationDays(mission.startDate, mission.endDate);
+  const result = employees.map(e => {
+    const fees = calculateFees(e.category as EmployeeCategory, durationDays);
+    return { employeeId: e.id, fullName: `${e.firstName} ${e.lastName}`, matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
+  });
+
+  res.json(result);
+});
+
+router.delete("/missions/:id/employees/:employeeId", requireAuth, async (req, res): Promise<void> => {
+  const params = RemoveMissionEmployeeParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
+
+  if (req.userRole !== "dmg" && req.userRole !== "admin") {
+    res.status(403).json({ error: "Seul le DMG peut modifier les employés d'une mission" });
+    return;
+  }
+
+  const [mission] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
+  if (!mission) { res.status(404).json({ error: "Mission non trouvée" }); return; }
+
+  if (mission.status !== "pending_dmg") {
+    res.status(400).json({ error: "Les employés ne peuvent être modifiés qu'à l'étape DMG" });
+    return;
+  }
+
+  await db.delete(missionEmployeesTable)
+    .where(and(eq(missionEmployeesTable.missionId, params.data.id), eq(missionEmployeesTable.employeeId, params.data.employeeId)));
+
+  const missionEmps = await db.select().from(missionEmployeesTable).where(eq(missionEmployeesTable.missionId, params.data.id));
+  const empIds = missionEmps.map(me => me.employeeId);
+  const employees = empIds.length > 0 ? await db.select().from(employeesTable).where(inArray(employeesTable.id, empIds)) : [];
+  const durationDays = calcDurationDays(mission.startDate, mission.endDate);
+  const result = employees.map(e => {
+    const fees = calculateFees(e.category as EmployeeCategory, durationDays);
+    return { employeeId: e.id, fullName: `${e.firstName} ${e.lastName}`, matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
   });
 
   res.json(result);

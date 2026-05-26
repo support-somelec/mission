@@ -7,14 +7,17 @@ import {
   useGetMissionEmployees,
   useValidateMission,
   useAssignVehicles,
-  useGenerateMissionOrder
+  useGenerateMissionOrder,
+  useAddMissionEmployee,
+  useRemoveMissionEmployee,
+  useListEmployees,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
   ArrowLeft, Printer, CheckCircle, XCircle, CarFront, FileText, 
-  Map, Calendar, Settings, Fuel, CreditCard, Receipt
+  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -60,6 +63,8 @@ export default function MissionDetail() {
   const [isValidateDialogOpen, setIsValidateDialogOpen] = useState(false);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isAssignVehicleDialogOpen, setIsAssignVehicleDialogOpen] = useState(false);
+  const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
+  const [employeeSearch, setEmployeeSearch] = useState("");
 
   const { data: mission, isLoading: isMissionLoading } = useGetMission(id, { 
     query: { queryKey: [`/api/missions/${id}`], enabled: !!id } 
@@ -71,6 +76,39 @@ export default function MissionDetail() {
 
   const { data: employees } = useGetMissionEmployees(id, {
     query: { queryKey: [`/api/missions/${id}/employees`], enabled: !!id }
+  });
+
+  const isDMGPendingDMG = !!(user?.role === "dmg" && mission?.status === "pending_dmg");
+
+  const { data: allEmployees } = useListEmployees(
+    { search: employeeSearch || undefined, limit: 20 },
+    { query: { queryKey: ["/api/employees", "dmg-search", employeeSearch], enabled: isAddEmployeeDialogOpen } }
+  );
+
+  const addEmployeeMutation = useAddMissionEmployee({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`/api/missions/${id}/employees`] });
+        toast({ title: "Employé ajouté à la mission" });
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const removeEmployeeMutation = useRemoveMissionEmployee({
+    mutation: {
+      onSuccess: () => {
+        queryClient.invalidateQueries({ queryKey: [`/api/missions/${id}/employees`] });
+        toast({ title: "Employé retiré de la mission" });
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
   });
 
   const validateMutation = useValidateMission({
@@ -441,7 +479,14 @@ export default function MissionDetail() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Missionnaires ({mission.employeeCount})</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle>Missionnaires ({employees ? employees.length : mission.employeeCount})</CardTitle>
+                {isDMGPendingDMG && (
+                  <Button size="sm" variant="outline" onClick={() => setIsAddEmployeeDialogOpen(true)}>
+                    <UserPlus className="w-4 h-4 mr-1.5" /> Ajouter un employé
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               <div className="rounded-md border">
@@ -452,6 +497,7 @@ export default function MissionDetail() {
                       <TableHead>Poste</TableHead>
                       {employees && <TableHead className="text-right">Frais / Jour</TableHead>}
                       {employees && <TableHead className="text-right">Total</TableHead>}
+                      {isDMGPendingDMG && <TableHead className="w-10" />}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -465,6 +511,19 @@ export default function MissionDetail() {
                           <TableCell><div className="text-sm">{emp.position}</div></TableCell>
                           <TableCell className="text-right font-mono text-sm">{emp.dailyRate} MRU</TableCell>
                           <TableCell className="text-right font-mono font-medium">{emp.totalFee} MRU</TableCell>
+                          {isDMGPendingDMG && (
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                                disabled={removeEmployeeMutation.isPending}
+                                onClick={() => removeEmployeeMutation.mutate({ id, employeeId: emp.employeeId })}
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </Button>
+                            </TableCell>
+                          )}
                         </TableRow>
                       ))
                     ) : (
@@ -502,6 +561,74 @@ export default function MissionDetail() {
               )}
             </CardContent>
           </Card>
+
+          {/* DMG — Add Employee Dialog */}
+          <Dialog open={isAddEmployeeDialogOpen} onOpenChange={(open) => { setIsAddEmployeeDialogOpen(open); if (!open) setEmployeeSearch(""); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserPlus className="w-5 h-5" /> Ajouter un employé à la mission
+                </DialogTitle>
+                <DialogDescription>
+                  Recherchez et sélectionnez un employé à ajouter (ex : chauffeur).
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-3">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Nom, matricule..."
+                    className="pl-8"
+                    value={employeeSearch}
+                    onChange={(e) => setEmployeeSearch(e.target.value)}
+                    autoFocus
+                  />
+                </div>
+                <div className="rounded-md border max-h-64 overflow-y-auto">
+                  <Table>
+                    <TableBody>
+                      {allEmployees?.data && allEmployees.data.length > 0 ? (
+                        allEmployees.data.map((emp) => {
+                          const alreadyIn = employees?.some((e) => e.employeeId === emp.id);
+                          return (
+                            <TableRow key={emp.id} className={alreadyIn ? "opacity-50" : ""}>
+                              <TableCell>
+                                <div className="font-medium text-sm">{emp.fullName}</div>
+                                <div className="text-xs text-muted-foreground">{emp.matricule} — {emp.position}</div>
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <Button
+                                  size="sm"
+                                  variant={alreadyIn ? "secondary" : "outline"}
+                                  disabled={alreadyIn || addEmployeeMutation.isPending}
+                                  onClick={() => {
+                                    if (!alreadyIn) addEmployeeMutation.mutate({ id, data: { employeeId: emp.id } });
+                                  }}
+                                >
+                                  {alreadyIn ? "Déjà ajouté" : "Ajouter"}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={2} className="h-20 text-center text-sm text-muted-foreground">
+                            {employeeSearch ? "Aucun résultat" : "Tapez un nom ou matricule..."}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => { setIsAddEmployeeDialogOpen(false); setEmployeeSearch(""); }}>
+                  Fermer
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
 
         <div className="space-y-6">

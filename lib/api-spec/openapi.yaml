@@ -691,6 +691,73 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MissionEmployeeFee"
+    post:
+      operationId: addMissionEmployee
+      tags: [missions]
+      summary: Add an employee to a mission (DMG only, pending_dmg status)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [employeeId]
+              properties:
+                employeeId:
+                  type: integer
+      responses:
+        "200":
+          description: Updated employee list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MissionEmployeeFee"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /missions/{id}/employees/{employeeId}:
+    delete:
+      operationId: removeMissionEmployee
+      tags: [missions]
+      summary: Remove an employee from a mission (DMG only, pending_dmg status)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: employeeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated employee list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MissionEmployeeFee"
+        "403":
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
 
   /missions/{id}/validations:
     get:

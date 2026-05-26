@@ -932,6 +932,59 @@ export const GetMissionEmployeesResponse = zod.array(
 );
 
 /**
+ * @summary Add an employee to a mission (DMG only, pending_dmg status)
+ */
+export const AddMissionEmployeeParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const AddMissionEmployeeBody = zod.object({
+  employeeId: zod.number(),
+});
+
+export const AddMissionEmployeeResponseItem = zod.object({
+  employeeId: zod.number(),
+  fullName: zod.string(),
+  matricule: zod.string(),
+  nni: zod.string().nullish(),
+  position: zod.string(),
+  category: zod.string(),
+  dailyRate: zod.number(),
+  durationDays: zod.number(),
+  totalFee: zod.number(),
+  paidAmount: zod.number(),
+  remainingAmount: zod.number(),
+});
+export const AddMissionEmployeeResponse = zod.array(
+  AddMissionEmployeeResponseItem,
+);
+
+/**
+ * @summary Remove an employee from a mission (DMG only, pending_dmg status)
+ */
+export const RemoveMissionEmployeeParams = zod.object({
+  id: zod.coerce.number(),
+  employeeId: zod.coerce.number(),
+});
+
+export const RemoveMissionEmployeeResponseItem = zod.object({
+  employeeId: zod.number(),
+  fullName: zod.string(),
+  matricule: zod.string(),
+  nni: zod.string().nullish(),
+  position: zod.string(),
+  category: zod.string(),
+  dailyRate: zod.number(),
+  durationDays: zod.number(),
+  totalFee: zod.number(),
+  paidAmount: zod.number(),
+  remainingAmount: zod.number(),
+});
+export const RemoveMissionEmployeeResponse = zod.array(
+  RemoveMissionEmployeeResponseItem,
+);
+
+/**
  * @summary Get validation history for a mission
  */
 export const GetMissionValidationsParams = zod.object({

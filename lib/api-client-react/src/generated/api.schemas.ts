@@ -493,6 +493,10 @@ export type ListMissionsParams = {
   startDateTo?: string | null;
 };
 
+export type AddMissionEmployeeBody = {
+  employeeId: number;
+};
+
 export type GetPendingValidationsParams = {
   page?: number;
   limit?: number;

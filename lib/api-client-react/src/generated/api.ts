@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AddMissionEmployeeBody,
   AssignVehiclesBody,
   AuthResponse,
   CreateDepartmentBody,
@@ -2638,6 +2639,181 @@ export function useGetMissionEmployees<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Add an employee to a mission (DMG only, pending_dmg status)
+ */
+export const getAddMissionEmployeeUrl = (id: number) => {
+  return `/api/missions/${id}/employees`;
+};
+
+export const addMissionEmployee = async (
+  id: number,
+  addMissionEmployeeBody: AddMissionEmployeeBody,
+  options?: RequestInit,
+): Promise<MissionEmployeeFee[]> => {
+  return customFetch<MissionEmployeeFee[]>(getAddMissionEmployeeUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(addMissionEmployeeBody),
+  });
+};
+
+export const getAddMissionEmployeeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addMissionEmployee>>,
+    TError,
+    { id: number; data: BodyType<AddMissionEmployeeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof addMissionEmployee>>,
+  TError,
+  { id: number; data: BodyType<AddMissionEmployeeBody> },
+  TContext
+> => {
+  const mutationKey = ["addMissionEmployee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof addMissionEmployee>>,
+    { id: number; data: BodyType<AddMissionEmployeeBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return addMissionEmployee(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AddMissionEmployeeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof addMissionEmployee>>
+>;
+export type AddMissionEmployeeMutationBody = BodyType<AddMissionEmployeeBody>;
+export type AddMissionEmployeeMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Add an employee to a mission (DMG only, pending_dmg status)
+ */
+export const useAddMissionEmployee = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof addMissionEmployee>>,
+    TError,
+    { id: number; data: BodyType<AddMissionEmployeeBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof addMissionEmployee>>,
+  TError,
+  { id: number; data: BodyType<AddMissionEmployeeBody> },
+  TContext
+> => {
+  return useMutation(getAddMissionEmployeeMutationOptions(options));
+};
+
+/**
+ * @summary Remove an employee from a mission (DMG only, pending_dmg status)
+ */
+export const getRemoveMissionEmployeeUrl = (id: number, employeeId: number) => {
+  return `/api/missions/${id}/employees/${employeeId}`;
+};
+
+export const removeMissionEmployee = async (
+  id: number,
+  employeeId: number,
+  options?: RequestInit,
+): Promise<MissionEmployeeFee[]> => {
+  return customFetch<MissionEmployeeFee[]>(
+    getRemoveMissionEmployeeUrl(id, employeeId),
+    {
+      ...options,
+      method: "DELETE",
+    },
+  );
+};
+
+export const getRemoveMissionEmployeeMutationOptions = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeMissionEmployee>>,
+    TError,
+    { id: number; employeeId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof removeMissionEmployee>>,
+  TError,
+  { id: number; employeeId: number },
+  TContext
+> => {
+  const mutationKey = ["removeMissionEmployee"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof removeMissionEmployee>>,
+    { id: number; employeeId: number }
+  > = (props) => {
+    const { id, employeeId } = props ?? {};
+
+    return removeMissionEmployee(id, employeeId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RemoveMissionEmployeeMutationResult = NonNullable<
+  Awaited<ReturnType<typeof removeMissionEmployee>>
+>;
+
+export type RemoveMissionEmployeeMutationError = ErrorType<ErrorResponse>;
+
+/**
+ * @summary Remove an employee from a mission (DMG only, pending_dmg status)
+ */
+export const useRemoveMissionEmployee = <
+  TError = ErrorType<ErrorResponse>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof removeMissionEmployee>>,
+    TError,
+    { id: number; employeeId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof removeMissionEmployee>>,
+  TError,
+  { id: number; employeeId: number },
+  TContext
+> => {
+  return useMutation(getRemoveMissionEmployeeMutationOptions(options));
+};
 
 /**
  * @summary Get validation history for a mission
