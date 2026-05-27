@@ -48,6 +48,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ROLE_LABELS, MISSION_STATUS_LABELS } from "@/lib/constants";
+import { MissionWorkflowStepper } from "@/components/mission-workflow-stepper";
 
 export default function MissionDetail() {
   const [, params] = useRoute("/missions/:id");
@@ -424,6 +425,14 @@ export default function MissionDetail() {
           )}
         </div>
       </div>
+
+      {/* Workflow Stepper */}
+      <Card className="p-4">
+        <MissionWorkflowStepper
+          status={mission.status as Parameters<typeof MissionWorkflowStepper>[0]["status"]}
+          validatedStatuses={validations?.map((v) => v.fromStatus) ?? []}
+        />
+      </Card>
 
       {/* En Vigueur Banner */}
       {mission.status === "en_vigueur" && (
