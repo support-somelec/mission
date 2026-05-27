@@ -7,6 +7,9 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+// Trust the nginx reverse proxy (needed for correct IP / protocol forwarding)
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
@@ -46,10 +49,11 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === "production",
+      // Set COOKIE_SECURE=true only when the app is served over HTTPS
+      secure: process.env.COOKIE_SECURE === "true",
       httpOnly: true,
       maxAge: 24 * 60 * 60 * 1000, // 24h
-      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      sameSite: process.env.COOKIE_SECURE === "true" ? "none" : "lax",
     },
   })
 );

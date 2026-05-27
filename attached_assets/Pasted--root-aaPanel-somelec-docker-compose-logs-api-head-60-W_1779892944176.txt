@@ -1,0 +1,62 @@
+[root@aaPanel somelec]# docker compose logs api | head -60
+WARN[0000] /root/somelec/docker-compose.yml: the attribute `version` is obsolete, it will be ignored, please remove it to avoid potential confusion 
+api-1  | ==> Applying database migrations...
+api-1  | 
+api-1  | > @workspace/db@0.0.0 push /app/lib/db
+api-1  | > drizzle-kit push --config ./drizzle.config.ts
+api-1  | 
+api-1  | Reading config file '/app/lib/db/drizzle.config.ts'
+api-1  | Using 'pg' driver for database querying
+api-1  | [⣷] Pulling schema from database...
+[⣯] Pulling schema from database...
+[⣟] Pulling schema from database...
+[✓] Pulling schema from database...
+api-1  | [i] No changes detected
+api-1  | ==> Migrations done.
+api-1  | ==> Seeding default data...
+api-1  |   [seed] Départements OK
+api-1  |   [seed] Utilisateurs OK
+api-1  | ==> Seed done.
+api-1  | ==> Starting API server...
+api-1  | Warning: connect.session() MemoryStore is not
+api-1  | designed for a production environment, as it will leak
+api-1  | memory, and will not scale past a single process.
+api-1  | {"level":30,"time":1779879367551,"pid":1,"hostname":"2604d31ed067","port":8080,"msg":"Server listening"}
+api-1  | {"level":30,"time":1779879391533,"pid":1,"hostname":"2604d31ed067","req":{"id":1,"method":"GET","url":"/api/auth/me"},"res":{"statusCode":401},"responseTime":16,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879395651,"pid":1,"hostname":"2604d31ed067","req":{"id":2,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":48,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879397380,"pid":1,"hostname":"2604d31ed067","req":{"id":3,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":9,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879400076,"pid":1,"hostname":"2604d31ed067","req":{"id":4,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":7,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879430987,"pid":1,"hostname":"2604d31ed067","req":{"id":5,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":23,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879441530,"pid":1,"hostname":"2604d31ed067","req":{"id":6,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":24,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879717141,"pid":1,"hostname":"2604d31ed067","req":{"id":7,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":401},"responseTime":27,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879769991,"pid":1,"hostname":"2604d31ed067","req":{"id":8,"method":"POST","url":"/api/auth/login"},"res":{"statusCode":200},"responseTime":21,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879770056,"pid":1,"hostname":"2604d31ed067","req":{"id":9,"method":"GET","url":"/api/dashboard/stats"},"res":{"statusCode":401},"responseTime":3,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879770063,"pid":1,"hostname":"2604d31ed067","req":{"id":10,"method":"GET","url":"/api/dashboard/pending-validations"},"res":{"statusCode":401},"responseTime":3,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879770066,"pid":1,"hostname":"2604d31ed067","req":{"id":11,"method":"GET","url":"/api/missions"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879771089,"pid":1,"hostname":"2604d31ed067","req":{"id":12,"method":"GET","url":"/api/missions"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879771090,"pid":1,"hostname":"2604d31ed067","req":{"id":13,"method":"GET","url":"/api/dashboard/stats"},"res":{"statusCode":401},"responseTime":0,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879771092,"pid":1,"hostname":"2604d31ed067","req":{"id":14,"method":"GET","url":"/api/dashboard/pending-validations"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879777885,"pid":1,"hostname":"2604d31ed067","req":{"id":15,"method":"GET","url":"/api/missions"},"res":{"statusCode":401},"responseTime":4,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879779057,"pid":1,"hostname":"2604d31ed067","req":{"id":16,"method":"GET","url":"/api/missions"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879780924,"pid":1,"hostname":"2604d31ed067","req":{"id":17,"method":"GET","url":"/api/employees"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879781949,"pid":1,"hostname":"2604d31ed067","req":{"id":18,"method":"GET","url":"/api/employees"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879784461,"pid":1,"hostname":"2604d31ed067","req":{"id":19,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879784467,"pid":1,"hostname":"2604d31ed067","req":{"id":20,"method":"GET","url":"/api/dashboard/reporting"},"res":{"statusCode":401},"responseTime":3,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879785587,"pid":1,"hostname":"2604d31ed067","req":{"id":21,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879785590,"pid":1,"hostname":"2604d31ed067","req":{"id":22,"method":"GET","url":"/api/dashboard/reporting"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879786948,"pid":1,"hostname":"2604d31ed067","req":{"id":23,"method":"GET","url":"/api/users"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879786953,"pid":1,"hostname":"2604d31ed067","req":{"id":24,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879787987,"pid":1,"hostname":"2604d31ed067","req":{"id":25,"method":"GET","url":"/api/users"},"res":{"statusCode":401},"responseTime":3,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879787990,"pid":1,"hostname":"2604d31ed067","req":{"id":26,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879790797,"pid":1,"hostname":"2604d31ed067","req":{"id":27,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879790800,"pid":1,"hostname":"2604d31ed067","req":{"id":28,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879791831,"pid":1,"hostname":"2604d31ed067","req":{"id":29,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879791836,"pid":1,"hostname":"2604d31ed067","req":{"id":30,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879793684,"pid":1,"hostname":"2604d31ed067","req":{"id":31,"method":"GET","url":"/api/users"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879793687,"pid":1,"hostname":"2604d31ed067","req":{"id":32,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":0,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879794717,"pid":1,"hostname":"2604d31ed067","req":{"id":33,"method":"GET","url":"/api/users"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879794719,"pid":1,"hostname":"2604d31ed067","req":{"id":34,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879798855,"pid":1,"hostname":"2604d31ed067","req":{"id":35,"method":"GET","url":"/api/employees"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879798858,"pid":1,"hostname":"2604d31ed067","req":{"id":36,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":2,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879799881,"pid":1,"hostname":"2604d31ed067","req":{"id":37,"method":"GET","url":"/api/employees"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
+api-1  | {"level":30,"time":1779879799883,"pid":1,"hostname":"2604d31ed067","req":{"id":38,"method":"GET","url":"/api/departments"},"res":{"statusCode":401},"responseTime":1,"msg":"request completed"}
