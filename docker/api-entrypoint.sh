@@ -6,5 +6,9 @@ cd /app/lib/db
 pnpm run push
 echo "==> Migrations done."
 
+echo "==> Seeding default data..."
+node /app/docker/seed.mjs
+echo "==> Seed done."
+
 echo "==> Starting API server..."
 exec node --enable-source-maps /app/artifacts/api-server/dist/index.mjs

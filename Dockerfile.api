@@ -26,6 +26,7 @@ RUN pnpm run typecheck:libs
 RUN pnpm --filter @workspace/api-server run build
 
 COPY docker/api-entrypoint.sh /entrypoint.sh
+COPY docker/seed.mjs          /app/docker/seed.mjs
 RUN chmod +x /entrypoint.sh
 
 ENV NODE_ENV=production
