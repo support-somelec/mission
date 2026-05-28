@@ -96,7 +96,7 @@ export default function MissionDetail() {
       },
       onError: (err: unknown) => {
         const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
-        toast({ title: "Erreur", description: msg, variant: "destructive" });
+        toast({ title: "Erreur", description: <span className="whitespace-pre-line">{msg}</span>, variant: "destructive" });
       },
     },
   });

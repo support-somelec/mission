@@ -326,9 +326,12 @@ router.post("/missions", requireAuth, async (req, res): Promise<void> => {
   if (employeeIds && employeeIds.length > 0) {
     const { conflicting } = await checkEmployeeOverlap(employeeIds, missionData.startDate, missionData.endDate);
     if (conflicting.length > 0) {
-      const names = [...new Set(conflicting.map((c) => c.fullName))].join(", ");
+      const lines = conflicting.map(
+        (c) => `${c.fullName} (Mission #${c.missionId} — ${c.missionTitle})`
+      );
+      const unique = [...new Set(lines)];
       res.status(400).json({
-        error: `Les missionnaires suivants sont déjà en mission sur cette période : ${names}. Veuillez modifier les dates ou retirer ces employés.`,
+        error: `Conflit de mission détecté :\n${unique.join("\n")}\n\nCes missionnaires sont déjà affectés à une mission sur la même période. Veuillez modifier les dates ou retirer ces employés.`,
       });
       return;
     }
