@@ -11,13 +11,14 @@ import {
   useAddMissionEmployee,
   useRemoveMissionEmployee,
   useListEmployees,
+  useDeleteMission,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
   ArrowLeft, Printer, CheckCircle, XCircle, CarFront, FileText, 
-  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search
+  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search, AlertTriangle
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -65,6 +66,7 @@ export default function MissionDetail() {
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
   const [isAssignVehicleDialogOpen, setIsAssignVehicleDialogOpen] = useState(false);
   const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [employeeSearch, setEmployeeSearch] = useState("");
 
   const { data: mission, isLoading: isMissionLoading } = useGetMission(id, { 
@@ -154,6 +156,19 @@ export default function MissionDetail() {
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       }
     }
+  });
+
+  const deleteMutation = useDeleteMission({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Mission supprimée." });
+        setLocation("/missions");
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
   });
 
   const generateOrderMutation = useGenerateMissionOrder({
@@ -248,6 +263,37 @@ export default function MissionDetail() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Admin — Delete mission */}
+          {role === "admin" && (
+            <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-2" /> Supprimer
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="w-5 h-5" /> Supprimer la mission
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cette action est irréversible. La mission <strong>#{mission.id} — {mission.title}</strong> et toutes ses données (validations, missionnaires) seront définitivement supprimées.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Annuler</Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => deleteMutation.mutate({ id })}
+                    disabled={deleteMutation.isPending}
+                  >
+                    {deleteMutation.isPending ? "Suppression..." : "Confirmer la suppression"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          )}
+
           {canPrintOrder && (
             <Link href={`/missions/${mission.id}/order`}>
               <Button variant="outline">

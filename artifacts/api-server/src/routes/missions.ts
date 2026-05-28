@@ -333,14 +333,14 @@ router.delete("/missions/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  const [existing] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
-  if (!existing) {
-    res.status(404).json({ error: "Mission non trouvée" });
+  if (req.userRole !== "admin") {
+    res.status(403).json({ error: "Seul l'administrateur peut supprimer une mission" });
     return;
   }
 
-  if (existing.status !== "draft" && req.userRole !== "admin") {
-    res.status(403).json({ error: "Impossible de supprimer une mission en cours de validation" });
+  const [existing] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
+  if (!existing) {
+    res.status(404).json({ error: "Mission non trouvée" });
     return;
   }
 
