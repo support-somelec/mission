@@ -60,13 +60,13 @@ export default function MissionNew() {
         });
         setLocation(`/missions/${data.id}`);
       },
-      onError: (err: any) => {
-        const msg: string = err?.error || "Une erreur est survenue lors de la création.";
+      onError: (err: unknown) => {
+        const msg: string =
+          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          "Une erreur est survenue lors de la création.";
         toast({
           title: "Erreur",
-          description: (
-            <span className="whitespace-pre-line">{msg}</span>
-          ),
+          description: <span className="whitespace-pre-line">{msg}</span>,
           variant: "destructive",
         });
       }
