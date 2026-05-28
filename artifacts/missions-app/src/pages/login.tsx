@@ -5,6 +5,7 @@ import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { useRegister } from "@workspace/api-client-react";
 import { Loader2, ArrowRight, UserPlus, ChevronLeft } from "lucide-react";
+
 import logoSomelec from "/logo-somelec.png";
 
 import { Button } from "@/components/ui/button";
@@ -34,18 +35,6 @@ const registerSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 type RegisterFormValues = z.infer<typeof registerSchema>;
 
-const TEST_USERS = [
-  { username: "admin",             password: "admin123",   label: "Administrateur",        color: "bg-slate-700" },
-  { username: "ahmed.dg",          password: "admin123",   label: "Employé",               color: "bg-blue-600" },
-  { username: "fatima.drh",        password: "password123",label: "Directeur",             color: "bg-indigo-600" },
-  { username: "directeur.central", password: "password123",label: "Dir. Central",          color: "bg-violet-600" },
-  { username: "controle.tech",     password: "password123",label: "Ctrl. Technique",       color: "bg-purple-600" },
-  { username: "dga.somelec",       password: "password123",label: "DGA",                   color: "bg-fuchsia-600" },
-  { username: "dmg.somelec",       password: "password123",label: "DMG",                   color: "bg-rose-600" },
-  { username: "cad.edition",       password: "password123",label: "CAD Édition",           color: "bg-orange-600" },
-  { username: "cad.paiement",      password: "password123",label: "CAD Paiement",          color: "bg-amber-600" },
-  { username: "ctrl.financier",    password: "password123",label: "Ctrl. Financier",       color: "bg-emerald-600" },
-];
 
 export default function Login() {
   const { login } = useAuth();
@@ -96,12 +85,6 @@ export default function Login() {
     });
   };
 
-  const fillAndLogin = (username: string, password: string) => {
-    loginForm.setValue("username", username);
-    loginForm.setValue("password", password);
-    loginForm.handleSubmit(onLoginSubmit)();
-  };
-
   return (
     <div className="min-h-screen w-full flex bg-gray-50">
       {/* Left pane */}
@@ -117,26 +100,6 @@ export default function Login() {
           <p className="text-lg text-primary-foreground/80 leading-relaxed">
             Portail interne pour la création, le suivi et la validation des missions professionnelles.
           </p>
-
-          {mode === "login" && (
-            <div className="mt-10">
-              <p className="text-xs font-semibold uppercase tracking-widest text-primary-foreground/50 mb-3">
-                Comptes de démonstration
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {TEST_USERS.map((u) => (
-                  <button
-                    key={u.username}
-                    onClick={() => fillAndLogin(u.username, u.password)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-md bg-white/10 hover:bg-white/20 transition-colors text-left"
-                  >
-                    <span className={`w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
-                    <span className="text-xs font-medium truncate">{u.label}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div className="relative z-10 text-sm text-primary-foreground/60">
@@ -172,7 +135,7 @@ export default function Login() {
                           <FormItem>
                             <FormLabel>Nom d'utilisateur</FormLabel>
                             <FormControl>
-                              <Input placeholder="admin, cad.edition..." {...field} className="h-12" />
+                              <Input placeholder="Votre nom d'utilisateur" {...field} className="h-12" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -213,31 +176,6 @@ export default function Login() {
                 </CardContent>
               </Card>
 
-              <Card className="border border-dashed shadow-none">
-                <CardHeader className="pb-3 pt-4 px-4">
-                  <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                    Comptes de démonstration — cliquer pour se connecter
-                  </p>
-                </CardHeader>
-                <CardContent className="px-4 pb-4">
-                  <div className="grid grid-cols-2 gap-2">
-                    {TEST_USERS.map((u) => (
-                      <button
-                        key={u.username}
-                        onClick={() => fillAndLogin(u.username, u.password)}
-                        disabled={isLoading}
-                        className="flex items-start gap-2 px-3 py-2 rounded-md border bg-white hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
-                      >
-                        <span className={`mt-1 w-2 h-2 rounded-full ${u.color} flex-shrink-0`} />
-                        <div className="min-w-0">
-                          <div className="text-xs font-semibold text-foreground truncate">{u.label}</div>
-                          <div className="text-[11px] text-muted-foreground font-mono truncate">{u.username}</div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
             </>
           )}
 
