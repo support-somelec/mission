@@ -95,7 +95,7 @@ export default function MissionDetail() {
         toast({ title: "Employé ajouté à la mission" });
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Erreur";
         toast({ title: "Erreur", description: <span className="whitespace-pre-line">{msg}</span>, variant: "destructive" });
       },
     },
@@ -108,7 +108,7 @@ export default function MissionDetail() {
         toast({ title: "Employé retiré de la mission" });
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Erreur";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       },
     },
@@ -123,7 +123,7 @@ export default function MissionDetail() {
         setComment("");
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Une erreur est survenue";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       }
     }
@@ -138,7 +138,7 @@ export default function MissionDetail() {
         setComment("");
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Une erreur est survenue";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       }
     }
@@ -152,7 +152,7 @@ export default function MissionDetail() {
         setIsAssignVehicleDialogOpen(false);
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Une erreur est survenue";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       }
     }
@@ -165,7 +165,7 @@ export default function MissionDetail() {
         setLocation("/missions");
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Erreur";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Erreur";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       },
     },
@@ -178,7 +178,7 @@ export default function MissionDetail() {
         queryClient.invalidateQueries({ queryKey: getGetMissionQueryKey(id) });
       },
       onError: (err: unknown) => {
-        const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error ?? "Une erreur est survenue";
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Une erreur est survenue";
         toast({ title: "Erreur", description: msg, variant: "destructive" });
       }
     }

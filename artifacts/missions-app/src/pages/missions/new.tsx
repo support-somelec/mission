@@ -62,7 +62,7 @@ export default function MissionNew() {
       },
       onError: (err: unknown) => {
         const msg: string =
-          (err as { response?: { data?: { error?: string } } })?.response?.data?.error ||
+          (err as { data?: { error?: string } })?.data?.error ||
           "Une erreur est survenue lors de la création.";
         toast({
           title: "Erreur",
