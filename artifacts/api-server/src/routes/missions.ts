@@ -228,6 +228,78 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
   });
 });
 
+// Vérifie si un ou plusieurs employés ont déjà une mission chevauchante (hors draft/rejected)
+async function checkEmployeeOverlap(
+  employeeIds: number[],
+  startDate: string,
+  endDate: string,
+  excludeMissionId?: number
+): Promise<{ conflicting: { employeeId: number; fullName: string; missionId: number; missionTitle: string }[] }> {
+  if (employeeIds.length === 0) return { conflicting: [] };
+
+  // Trouver toutes les missions actives auxquelles ces employés participent
+  const assignments = await db
+    .select({
+      employeeId: missionEmployeesTable.employeeId,
+      missionId: missionEmployeesTable.missionId,
+    })
+    .from(missionEmployeesTable)
+    .where(inArray(missionEmployeesTable.employeeId, employeeIds));
+
+  const missionIds = [...new Set(assignments.map((a) => a.missionId))].filter(
+    (mid) => mid !== excludeMissionId
+  );
+  if (missionIds.length === 0) return { conflicting: [] };
+
+  // Filtrer les missions qui chevauchent la période et ne sont pas draft/rejected
+  const overlapping = await db
+    .select({
+      id: missionsTable.id,
+      title: missionsTable.title,
+      startDate: missionsTable.startDate,
+      endDate: missionsTable.endDate,
+      status: missionsTable.status,
+    })
+    .from(missionsTable)
+    .where(
+      and(
+        inArray(missionsTable.id, missionIds),
+        sql`${missionsTable.status} NOT IN ('draft', 'rejected')`,
+        sql`${missionsTable.startDate} <= ${endDate}`,
+        sql`${missionsTable.endDate} >= ${startDate}`
+      )
+    );
+
+  if (overlapping.length === 0) return { conflicting: [] };
+
+  const overlappingIds = new Set(overlapping.map((m) => m.id));
+  const overlappingMissionMap = new Map(overlapping.map((m) => [m.id, m]));
+
+  // Associer les employés aux missions en conflit
+  const conflictingAssignments = assignments.filter(
+    (a) => overlappingIds.has(a.missionId)
+  );
+
+  const conflictEmpIds = [...new Set(conflictingAssignments.map((a) => a.employeeId))];
+  const conflictEmployees =
+    conflictEmpIds.length > 0
+      ? await db
+          .select({ id: employeesTable.id, firstName: employeesTable.firstName, lastName: employeesTable.lastName })
+          .from(employeesTable)
+          .where(inArray(employeesTable.id, conflictEmpIds))
+      : [];
+  const empMap = new Map(conflictEmployees.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
+
+  const conflicting = conflictingAssignments.map((a) => ({
+    employeeId: a.employeeId,
+    fullName: empMap.get(a.employeeId) ?? `ID ${a.employeeId}`,
+    missionId: a.missionId,
+    missionTitle: overlappingMissionMap.get(a.missionId)?.title ?? "",
+  }));
+
+  return { conflicting };
+}
+
 router.post("/missions", requireAuth, async (req, res): Promise<void> => {
   const parsed = CreateMissionBody.safeParse(req.body);
   if (!parsed.success) {
@@ -240,6 +312,28 @@ router.post("/missions", requireAuth, async (req, res): Promise<void> => {
   const userDeptId = req.userDepartmentId;
 
   const { employeeIds, ...missionData } = parsed.data;
+
+  // Règle 1 : la date de début ne peut pas être dans le passé
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const start = new Date(missionData.startDate);
+  if (start < today) {
+    res.status(400).json({ error: "La date de début ne peut pas être dans le passé. Veuillez choisir une date à partir d'aujourd'hui." });
+    return;
+  }
+
+  // Règle 2 : aucun missionnaire ne peut être en mission sur le même intervalle
+  if (employeeIds && employeeIds.length > 0) {
+    const { conflicting } = await checkEmployeeOverlap(employeeIds, missionData.startDate, missionData.endDate);
+    if (conflicting.length > 0) {
+      const names = [...new Set(conflicting.map((c) => c.fullName))].join(", ");
+      res.status(400).json({
+        error: `Les missionnaires suivants sont déjà en mission sur cette période : ${names}. Veuillez modifier les dates ou retirer ces employés.`,
+      });
+      return;
+    }
+  }
+
   const initialStatus = getInitialStatus(userRole);
 
   const [mission] = await db
@@ -736,6 +830,20 @@ router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<vo
     .where(and(eq(missionEmployeesTable.missionId, params.data.id), eq(missionEmployeesTable.employeeId, parsed.data.employeeId)));
   if (existing.length > 0) {
     res.status(400).json({ error: "Cet employé est déjà assigné à cette mission" });
+    return;
+  }
+
+  // Règle : vérifier qu'il n'est pas déjà en mission sur le même intervalle
+  const { conflicting } = await checkEmployeeOverlap(
+    [parsed.data.employeeId],
+    mission.startDate,
+    mission.endDate,
+    params.data.id  // exclure la mission courante
+  );
+  if (conflicting.length > 0) {
+    res.status(400).json({
+      error: `${emp.firstName} ${emp.lastName} est déjà missionnaire sur cette période (Mission #${conflicting[0].missionId} — ${conflicting[0].missionTitle}).`,
+    });
     return;
   }
 

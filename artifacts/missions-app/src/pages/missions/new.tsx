@@ -26,11 +26,16 @@ import { useToast } from "@/hooks/use-toast";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
+const todayStr = new Date().toISOString().split("T")[0];
+
 const missionSchema = z.object({
   title: z.string().min(5, "Le titre doit faire au moins 5 caractères"),
   needsExpression: z.string().min(10, "Expression des besoins requise"),
   actionPlan: z.string().min(10, "Plan d'action requis"),
-  startDate: z.string().min(1, "Date de début requise"),
+  startDate: z.string().min(1, "Date de début requise").refine(
+    (d) => d >= todayStr,
+    "La date de début ne peut pas être dans le passé"
+  ),
   endDate: z.string().min(1, "Date de fin requise"),
   destination: z.string().min(2, "Destination requise"),
   requiresFuel: z.boolean().default(false),
@@ -90,12 +95,10 @@ export default function MissionNew() {
   const selectedEmployeeIds = form.watch("employeeIds");
 
   const onSubmit = (data: MissionFormValues) => {
-    // Basic date validation
     if (new Date(data.endDate) < new Date(data.startDate)) {
       form.setError("endDate", { message: "La date de fin doit être après la date de début" });
       return;
     }
-    
     createMission.mutate({ data });
   };
 
@@ -161,7 +164,7 @@ export default function MissionNew() {
                     <FormItem>
                       <FormLabel>Date de début</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" min={todayStr} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -174,7 +177,7 @@ export default function MissionNew() {
                     <FormItem>
                       <FormLabel>Date de fin</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} />
+                        <Input type="date" min={todayStr} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
