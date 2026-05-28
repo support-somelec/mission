@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "pA0U5VdfPV5xOZt-BM1O0"
+uri = "file://Manuel_Utilisateur_SGM_SOMELEC.md"
+type = "text"
+title = "Manuel d'Utilisation — SGM SOMELEC"
