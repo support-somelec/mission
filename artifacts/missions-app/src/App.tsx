@@ -16,6 +16,7 @@ import EmployeesList from "@/pages/employees/index";
 import AdminDepartments from "@/pages/admin/departments";
 import AdminEmployees from "@/pages/admin/employees";
 import AdminUsers from "@/pages/admin/users";
+import AdminImport from "@/pages/admin/import";
 import Reporting from "@/pages/reporting";
 
 function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
@@ -91,6 +92,10 @@ function AppRouter() {
 
       <Route path="/admin/users">
         {() => <ProtectedRoute component={AdminUsers} adminOnly={true} />}
+      </Route>
+
+      <Route path="/admin/import">
+        {() => <ProtectedRoute component={AdminImport} adminOnly={true} />}
       </Route>
 
       <Route path="/reporting">

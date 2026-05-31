@@ -19,7 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle, BarChart3 } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle, BarChart3, FileUp } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
 import logoSomelec from "/logo-somelec.png";
 import {
@@ -174,6 +174,7 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { name: "Utilisateurs", href: "/admin/users", icon: Settings },
     { name: "Départements", href: "/admin/departments", icon: Building },
     { name: "Gestion Employés", href: "/admin/employees", icon: Building2 },
+    { name: "Import Missions", href: "/admin/import", icon: FileUp },
   ] : [];
 
   return (

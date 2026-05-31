@@ -6,6 +6,7 @@ import employeesRouter from "./employees";
 import usersRouter from "./users";
 import missionsRouter from "./missions";
 import dashboardRouter from "./dashboard";
+import importRouter from "./import";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(employeesRouter);
 router.use(usersRouter);
 router.use(missionsRouter);
 router.use(dashboardRouter);
+router.use(importRouter);
 
 export default router;
