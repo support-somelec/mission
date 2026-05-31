@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { db, missionsTable, missionEmployeesTable, employeesTable } from "@workspace/db";
-import { inArray } from "drizzle-orm";
+import { inArray, or } from "drizzle-orm";
 import { requireAuth, requireAdmin } from "../middlewares/session";
 
 const router: IRouter = Router();
@@ -90,20 +90,35 @@ router.post("/admin/import/missions", requireAuth, requireAdmin, async (req, res
     const matricules = parseMatricules(row.matricules_employes);
 
     try {
-      // Look up employees by matricule
+      // Look up employees by matricule OR NNI (each identifier tried against both fields)
       const employees = await db
-        .select({ id: employeesTable.id, matricule: employeesTable.matricule })
+        .select({ id: employeesTable.id, matricule: employeesTable.matricule, nni: employeesTable.nni })
         .from(employeesTable)
-        .where(inArray(employeesTable.matricule, matricules));
+        .where(
+          or(
+            inArray(employeesTable.matricule, matricules),
+            inArray(employeesTable.nni, matricules)
+          )
+        );
 
-      const foundMatricules = new Set(employees.map((e) => e.matricule));
-      const missing = matricules.filter((m) => !foundMatricules.has(m));
+      // Match each identifier to a found employee (by matricule or NNI)
+      const resolvedIds: number[] = [];
+      const missing: string[] = [];
+      for (const ident of matricules) {
+        const found = employees.find((e) => e.matricule === ident || e.nni === ident);
+        if (!found) {
+          missing.push(ident);
+        } else if (!resolvedIds.includes(found.id)) {
+          resolvedIds.push(found.id);
+        }
+      }
+
       if (missing.length > 0) {
-        results.push({ row: i + 1, status: "error", error: `Matricule(s) introuvable(s) : ${missing.join(", ")}` });
+        results.push({ row: i + 1, status: "error", error: `Identifiant(s) introuvable(s) : ${missing.join(", ")}` });
         continue;
       }
 
-      const employeeIds = employees.map((e) => e.id);
+      const employeeIds = resolvedIds;
 
       // Insert mission (bypass date & overlap validation — migration historique)
       const [mission] = await db.insert(missionsTable).values({

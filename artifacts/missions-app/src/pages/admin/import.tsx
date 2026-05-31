@@ -247,7 +247,7 @@ export default function AdminImport() {
               ))}
             </div>
             <p><strong>vehicule / carburant</strong> : <code className="bg-muted px-1 rounded">oui</code> ou <code className="bg-muted px-1 rounded">non</code></p>
-            <p><strong>matricules_employes</strong> : matricules séparés par <code className="bg-muted px-1 rounded">;</code> (ex : MAT001;MAT002)</p>
+            <p><strong>matricules_employes</strong> : matricule <em>ou</em> NNI de chaque agent, séparés par <code className="bg-muted px-1 rounded">;</code> (ex : <code className="bg-muted px-1 rounded">MAT001;12345678901234</code>)</p>
           </div>
           <Button variant="outline" size="sm" onClick={downloadTemplate}>
             <Download className="w-4 h-4 mr-2" /> Télécharger le modèle CSV
