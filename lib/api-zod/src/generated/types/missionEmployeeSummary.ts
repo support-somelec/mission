@@ -9,7 +9,8 @@
 export interface MissionEmployeeSummary {
   employeeId: number;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   position: string;
   category: string;
 }

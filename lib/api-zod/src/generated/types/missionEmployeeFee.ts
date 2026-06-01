@@ -9,7 +9,8 @@
 export interface MissionEmployeeFee {
   employeeId: number;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;

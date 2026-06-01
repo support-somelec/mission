@@ -8,9 +8,11 @@
 
 export interface ReportingByEmployee {
   employeeId: number;
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   departmentName: string;
   missionCount: number;
 }

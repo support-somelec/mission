@@ -7,9 +7,11 @@
  */
 
 export interface CreateEmployeeBody {
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;

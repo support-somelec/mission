@@ -92,8 +92,8 @@ export default function Reporting() {
       let av: string | number = 0;
       let bv: string | number = 0;
       if (sortCol === "missionCount") { av = a.missionCount; bv = b.missionCount; }
-      else if (sortCol === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
-      else if (sortCol === "matricule") { av = a.matricule; bv = b.matricule; }
+      else if (sortCol === "name") { av = [a.firstName, a.lastName].filter(Boolean).join(" "); bv = [b.firstName, b.lastName].filter(Boolean).join(" "); }
+      else if (sortCol === "matricule") { av = a.matricule ?? ""; bv = b.matricule ?? ""; }
       else if (sortCol === "department") { av = a.departmentName; bv = b.departmentName; }
       if (typeof av === "number" && typeof bv === "number") {
         return sortDir === "desc" ? bv - av : av - bv;

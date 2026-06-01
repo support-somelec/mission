@@ -24,7 +24,7 @@ async function enrichEmployee(emp: typeof employeesTable.$inferSelect) {
   }
   return {
     ...emp,
-    fullName: `${emp.firstName} ${emp.lastName}`,
+    fullName: [emp.firstName, emp.lastName].filter(Boolean).join(" "),
     departmentName,
   };
 }
@@ -80,7 +80,7 @@ router.get("/employees", requireAuth, async (req, res): Promise<void> => {
   res.json({
     data: employees.map(e => ({
       ...e,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
       departmentName: e.departmentId ? (deptMap.get(e.departmentId) ?? null) : null,
     })),
     total,

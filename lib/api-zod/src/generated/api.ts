@@ -217,10 +217,10 @@ export const ListEmployeesResponse = zod.object({
   data: zod.array(
     zod.object({
       id: zod.number(),
-      firstName: zod.string(),
+      firstName: zod.string().nullish(),
       lastName: zod.string(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       nni: zod.string().nullish(),
       position: zod.string(),
       category: zod.enum([
@@ -245,9 +245,9 @@ export const ListEmployeesResponse = zod.object({
  * @summary Create a new employee
  */
 export const CreateEmployeeBody = zod.object({
-  firstName: zod.string(),
+  firstName: zod.string().nullish(),
   lastName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.string(),
@@ -263,10 +263,10 @@ export const GetEmployeeParams = zod.object({
 
 export const GetEmployeeResponse = zod.object({
   id: zod.number(),
-  firstName: zod.string(),
+  firstName: zod.string().nullish(),
   lastName: zod.string(),
   fullName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.enum([
@@ -300,10 +300,10 @@ export const UpdateEmployeeBody = zod.object({
 
 export const UpdateEmployeeResponse = zod.object({
   id: zod.number(),
-  firstName: zod.string(),
+  firstName: zod.string().nullish(),
   lastName: zod.string(),
   fullName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.enum([
@@ -537,7 +537,7 @@ export const ListMissionsResponse = zod.object({
         zod.object({
           employeeId: zod.number(),
           fullName: zod.string(),
-          matricule: zod.string(),
+          matricule: zod.string().nullish(),
           position: zod.string(),
           category: zod.string(),
         }),
@@ -616,7 +616,7 @@ export const GetMissionResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
     }),
@@ -686,7 +686,7 @@ export const UpdateMissionResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
     }),
@@ -755,7 +755,7 @@ export const ValidateMissionResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
     }),
@@ -817,7 +817,7 @@ export const AssignVehiclesResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
     }),
@@ -851,7 +851,7 @@ export const GenerateMissionOrderResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       nni: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
@@ -894,7 +894,7 @@ export const GetMissionOrderResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       nni: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
@@ -933,7 +933,7 @@ export const GetMissionPaymentReceiptResponse = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       nni: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
@@ -962,7 +962,7 @@ export const GetMissionEmployeesParams = zod.object({
 export const GetMissionEmployeesResponseItem = zod.object({
   employeeId: zod.number(),
   fullName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.string(),
@@ -990,7 +990,7 @@ export const AddMissionEmployeeBody = zod.object({
 export const AddMissionEmployeeResponseItem = zod.object({
   employeeId: zod.number(),
   fullName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.string(),
@@ -1015,7 +1015,7 @@ export const RemoveMissionEmployeeParams = zod.object({
 export const RemoveMissionEmployeeResponseItem = zod.object({
   employeeId: zod.number(),
   fullName: zod.string(),
-  matricule: zod.string(),
+  matricule: zod.string().nullish(),
   nni: zod.string().nullish(),
   position: zod.string(),
   category: zod.string(),
@@ -1126,7 +1126,7 @@ export const GetPendingValidationsResponse = zod.object({
         zod.object({
           employeeId: zod.number(),
           fullName: zod.string(),
-          matricule: zod.string(),
+          matricule: zod.string().nullish(),
           position: zod.string(),
           category: zod.string(),
         }),
@@ -1185,7 +1185,7 @@ export const GetRecentMissionsResponseItem = zod.object({
     zod.object({
       employeeId: zod.number(),
       fullName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       position: zod.string(),
       category: zod.string(),
     }),
@@ -1232,9 +1232,9 @@ export const GetReportingResponse = zod.object({
   byEmployee: zod.array(
     zod.object({
       employeeId: zod.number(),
-      firstName: zod.string(),
+      firstName: zod.string().nullish(),
       lastName: zod.string(),
-      matricule: zod.string(),
+      matricule: zod.string().nullish(),
       departmentName: zod.string(),
       missionCount: zod.number(),
     }),

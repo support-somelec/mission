@@ -1215,13 +1215,13 @@ components:
         id:
           type: integer
         firstName:
-          type: string
+          type: ["string", "null"]
         lastName:
           type: string
         fullName:
           type: string
         matricule:
-          type: string
+          type: ["string", "null"]
         nni:
           type: ["string", "null"]
         position:
@@ -1242,10 +1242,8 @@ components:
           type: string
       required:
         - id
-        - firstName
         - lastName
         - fullName
-        - matricule
         - position
         - category
         - createdAt
@@ -1254,11 +1252,11 @@ components:
       type: object
       properties:
         firstName:
-          type: string
+          type: ["string", "null"]
         lastName:
           type: string
         matricule:
-          type: string
+          type: ["string", "null"]
         nni:
           type: ["string", "null"]
         position:
@@ -1268,9 +1266,7 @@ components:
         departmentId:
           type: ["integer", "null"]
       required:
-        - firstName
         - lastName
-        - matricule
         - position
         - category
 
@@ -1413,7 +1409,7 @@ components:
         fullName:
           type: string
         matricule:
-          type: string
+          type: ["string", "null"]
         position:
           type: string
         category:
@@ -1421,7 +1417,6 @@ components:
       required:
         - employeeId
         - fullName
-        - matricule
         - position
         - category
 
@@ -1433,7 +1428,7 @@ components:
         fullName:
           type: string
         matricule:
-          type: string
+          type: ["string", "null"]
         nni:
           type: ["string", "null"]
         position:
@@ -1453,7 +1448,6 @@ components:
       required:
         - employeeId
         - fullName
-        - matricule
         - position
         - category
         - dailyRate
@@ -1817,20 +1811,18 @@ components:
         employeeId:
           type: integer
         firstName:
-          type: string
+          type: ["string", "null"]
         lastName:
           type: string
         matricule:
-          type: string
+          type: ["string", "null"]
         departmentName:
           type: string
         missionCount:
           type: integer
       required:
         - employeeId
-        - firstName
         - lastName
-        - matricule
         - departmentName
         - missionCount
 

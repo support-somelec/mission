@@ -12,9 +12,9 @@ export const employeeCategoryEnum = pgEnum("employee_category", [
 
 export const employeesTable = pgTable("employees", {
   id: serial("id").primaryKey(),
-  firstName: text("first_name").notNull(),
+  firstName: text("first_name"),
   lastName: text("last_name").notNull(),
-  matricule: text("matricule").notNull().unique(),
+  matricule: text("matricule").unique(),
   nni: text("nni"),
   position: text("position").notNull(),
   category: employeeCategoryEnum("category").notNull().default("agent"),

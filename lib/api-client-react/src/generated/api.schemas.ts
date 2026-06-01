@@ -192,10 +192,12 @@ export const EmployeeCategory = {
 
 export interface Employee {
   id: number;
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;
@@ -208,9 +210,11 @@ export interface Employee {
 }
 
 export interface CreateEmployeeBody {
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;
@@ -263,7 +267,8 @@ export const MissionStatus = {
 export interface MissionEmployeeSummary {
   employeeId: number;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   position: string;
   category: string;
 }
@@ -310,7 +315,8 @@ export interface Mission {
 export interface MissionEmployeeFee {
   employeeId: number;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;
@@ -480,9 +486,11 @@ export interface ReportingByMonth {
 
 export interface ReportingByEmployee {
   employeeId: number;
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   departmentName: string;
   missionCount: number;
 }

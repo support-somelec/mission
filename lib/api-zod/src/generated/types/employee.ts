@@ -9,10 +9,12 @@ import type { EmployeeCategory } from "./employeeCategory";
 
 export interface Employee {
   id: number;
-  firstName: string;
+  /** @nullable */
+  firstName?: string | null;
   lastName: string;
   fullName: string;
-  matricule: string;
+  /** @nullable */
+  matricule?: string | null;
   /** @nullable */
   nni?: string | null;
   position: string;

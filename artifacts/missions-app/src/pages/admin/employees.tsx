@@ -89,6 +89,7 @@ type ImportRow = {
   status?: "pending" | "success" | "error";
   statusMessage?: string;
 };
+// matricule and firstName are optional — only lastName, position, category are required
 
 function parseCsv(text: string): ImportRow[] {
   const lines = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
@@ -103,15 +104,15 @@ function parseCsv(text: string): ImportRow[] {
 
     if (i === 0) {
       const first = cols[0].toLowerCase();
-      if (first === "matricule" || first === "mat" || first === "#") continue;
+      if (first === "matricule" || first === "mat" || first === "#" || first === "nom") continue;
     }
 
-    if (cols.length < 5) {
+    if (cols.length < 4) {
       rows.push({
         line: i + 1, matricule: cols[0] ?? "", firstName: cols[1] ?? "",
         lastName: cols[2] ?? "", nni: cols[3] ?? "", position: cols[4] ?? "",
         category: cols[5] ?? "agent", departmentId: cols[6] ?? "",
-        error: "Ligne incomplète (min 5 colonnes requises)",
+        error: "Ligne incomplète (min 4 colonnes requises)",
         status: "pending",
       });
       continue;
@@ -120,6 +121,8 @@ function parseCsv(text: string): ImportRow[] {
     const cat = cols[5]?.toLowerCase() ?? "agent";
     const resolvedCat = CATEGORY_KEYS.includes(cat) ? cat : "agent";
 
+    // Colonnes: matricule ; prenom ; nom ; nni ; poste ; categorie ; departement_id
+    // matricule et prenom sont facultatifs, nom et poste sont obligatoires
     rows.push({
       line: i + 1,
       matricule: cols[0] ?? "",
@@ -129,8 +132,8 @@ function parseCsv(text: string): ImportRow[] {
       position: cols[4] ?? "",
       category: resolvedCat,
       departmentId: cols[6] ?? "",
-      error: !cols[0] || !cols[1] || !cols[2] || !cols[4]
-        ? "Matricule, Prénom, Nom et Poste sont obligatoires"
+      error: !cols[2] || !cols[4]
+        ? "Nom et Poste sont obligatoires"
         : undefined,
       status: "pending",
     });
@@ -142,7 +145,8 @@ function parseCsv(text: string): ImportRow[] {
 const CSV_TEMPLATE = [
   "matricule;prenom;nom;nni;poste;categorie;departement_id",
   "EMP-001;Ahmed;Ould Mohamed;2312345678;Ingénieur réseau;other_cadre;",
-  "EMP-002;Fatima;Mint Saleck;;Comptable;agent;3",
+  "EMP-002;;Fatima Mint Saleck;9876543210123;Comptable;agent;3",
+  ";;Mohamed Ould Ahmed;;Technicien;agent;",
 ].join("\n");
 
 export default function AdminEmployees() {
@@ -241,13 +245,13 @@ export default function AdminEmployees() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const payload = {
-      firstName: form.firstName,
+      firstName: form.firstName || null,
       lastName: form.lastName,
-      matricule: form.matricule,
-      nni: form.nni || undefined,
+      matricule: form.matricule || null,
+      nni: form.nni || null,
       position: form.position,
       category: form.category as "dg_dga" | "director" | "chef_department" | "other_cadre" | "agent",
-      departmentId: form.departmentId ? parseInt(form.departmentId) : undefined,
+      departmentId: form.departmentId ? parseInt(form.departmentId) : null,
     };
 
     if (editingEmployee) {
@@ -293,13 +297,13 @@ export default function AdminEmployees() {
         await new Promise<void>((resolve, reject) => {
           createMutation.mutateAsync({
             data: {
-              matricule: row.matricule,
-              firstName: row.firstName,
+              matricule: row.matricule || null,
+              firstName: row.firstName || null,
               lastName: row.lastName,
-              nni: row.nni || undefined,
+              nni: row.nni || null,
               position: row.position,
               category: row.category as "dg_dga" | "director" | "chef_department" | "other_cadre" | "agent",
-              departmentId: row.departmentId ? parseInt(row.departmentId) : undefined,
+              departmentId: row.departmentId ? parseInt(row.departmentId) : null,
             },
           }).then(() => resolve()).catch(reject);
         });
@@ -479,10 +483,9 @@ export default function AdminEmployees() {
               Importer des employés depuis un fichier CSV
             </DialogTitle>
             <DialogDescription>
-              Chargez un fichier CSV avec les colonnes :{" "}
-              <code className="text-xs bg-muted px-1 py-0.5 rounded">
-                matricule ; prenom ; nom ; nni ; poste ; categorie ; departement_id
-              </code>
+              Colonnes : <code className="text-xs bg-muted px-1 py-0.5 rounded">matricule ; prenom ; nom ; nni ; poste ; categorie ; departement_id</code>
+              <br />
+              <span className="text-xs">Seuls <strong>nom</strong> et <strong>poste</strong> sont obligatoires. Matricule et prénom sont facultatifs.</span>
             </DialogDescription>
           </DialogHeader>
 
@@ -541,7 +544,7 @@ export default function AdminEmployees() {
                         <TableRow key={idx} className={row.error && !importDone ? "bg-red-50 dark:bg-red-950/20" : ""}>
                           <TableCell className="text-muted-foreground text-xs">{row.line}</TableCell>
                           <TableCell className="font-mono text-xs">{row.matricule || "—"}</TableCell>
-                          <TableCell>{row.firstName} {row.lastName}</TableCell>
+                          <TableCell>{[row.firstName, row.lastName].filter(Boolean).join(" ")}</TableCell>
                           <TableCell className="text-xs text-muted-foreground max-w-[120px] truncate">{row.position || "—"}</TableCell>
                           <TableCell className="text-xs">{EMPLOYEE_CATEGORY_LABELS[row.category] ?? row.category}</TableCell>
                           <TableCell>
@@ -613,13 +616,12 @@ export default function AdminEmployees() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="firstName">Prénom *</Label>
+                <Label htmlFor="firstName">Prénom <span className="text-muted-foreground font-normal">(facultatif)</span></Label>
                 <Input
                   id="firstName"
                   value={form.firstName}
                   onChange={(e) => setForm(f => ({ ...f, firstName: e.target.value }))}
                   placeholder="Prénom"
-                  required
                 />
               </div>
               <div className="space-y-1.5">
@@ -628,20 +630,19 @@ export default function AdminEmployees() {
                   id="lastName"
                   value={form.lastName}
                   onChange={(e) => setForm(f => ({ ...f, lastName: e.target.value }))}
-                  placeholder="Nom de famille"
+                  placeholder="Nom complet si pas de prénom"
                   required
                 />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <Label htmlFor="matricule">Matricule *</Label>
+                <Label htmlFor="matricule">Matricule <span className="text-muted-foreground font-normal">(facultatif)</span></Label>
                 <Input
                   id="matricule"
                   value={form.matricule}
                   onChange={(e) => setForm(f => ({ ...f, matricule: e.target.value }))}
                   placeholder="ex: EMP-001"
-                  required
                 />
               </div>
               <div className="space-y-1.5">
@@ -710,7 +711,7 @@ export default function AdminEmployees() {
           <AlertDialogHeader>
             <AlertDialogTitle>Supprimer l'employé</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer <strong>{deleteEmployee?.fullName}</strong> (Matricule: {deleteEmployee?.matricule}) ?
+              Êtes-vous sûr de vouloir supprimer <strong>{deleteEmployee?.fullName}</strong>{deleteEmployee?.matricule ? ` (Matricule: ${deleteEmployee.matricule})` : ""} ?{" "}
               Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
