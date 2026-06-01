@@ -86,7 +86,7 @@ async function getMissionWithDetails(id: number, userId: number, userRole: strin
     remainingAmount: remainingAmount || null,
     employees: employees.map(e => ({
       employeeId: e.id,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
       matricule: e.matricule,
       position: e.position,
       category: e.category,
@@ -214,7 +214,7 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
         remainingAmount: remainingAmount || null,
         employees: emps.map(e => ({
           employeeId: e.id,
-          fullName: `${e.firstName} ${e.lastName}`,
+          fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
           matricule: e.matricule,
           position: e.position,
           category: e.category,
@@ -288,7 +288,7 @@ async function checkEmployeeOverlap(
           .from(employeesTable)
           .where(inArray(employeesTable.id, conflictEmpIds))
       : [];
-  const empMap = new Map(conflictEmployees.map((e) => [e.id, `${e.firstName} ${e.lastName}`]));
+  const empMap = new Map(conflictEmployees.map((e) => [e.id, [e.firstName, e.lastName].filter(Boolean).join(" ")]));
 
   const conflicting = conflictingAssignments.map((a) => ({
     employeeId: a.employeeId,
@@ -645,7 +645,7 @@ async function buildMissionOrder(missionId: number, generatedByUserId: number) {
     totalFees += fees.totalFee;
     return {
       employeeId: e.id,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
       matricule: e.matricule,
       nni: e.nni,
       position: e.position,
@@ -734,7 +734,7 @@ router.get("/missions/:id/payment-receipt", requireAuth, async (req, res): Promi
     totalFees += fees.totalFee;
     return {
       employeeId: e.id,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
       matricule: e.matricule,
       nni: e.nni ?? null,
       position: e.position,
@@ -792,7 +792,7 @@ router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<voi
     const fees = calculateFees(e.category as EmployeeCategory, durationDays);
     return {
       employeeId: e.id,
-      fullName: `${e.firstName} ${e.lastName}`,
+      fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
       matricule: e.matricule,
       nni: e.nni ?? null,
       position: e.position,
@@ -845,7 +845,7 @@ router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<vo
   );
   if (conflicting.length > 0) {
     res.status(400).json({
-      error: `${emp.firstName} ${emp.lastName} est déjà missionnaire sur cette période (Mission #${conflicting[0].missionId} — ${conflicting[0].missionTitle}).`,
+      error: [emp.firstName, emp.lastName].filter(Boolean).join(" ") + ` est déjà missionnaire sur cette période (Mission #${conflicting[0].missionId} — ${conflicting[0].missionTitle}).`,
     });
     return;
   }
@@ -858,7 +858,7 @@ router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<vo
   const durationDays = calcDurationDays(mission.startDate, mission.endDate);
   const result = employees.map(e => {
     const fees = calculateFees(e.category as EmployeeCategory, durationDays);
-    return { employeeId: e.id, fullName: `${e.firstName} ${e.lastName}`, matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
+    return { employeeId: e.id, fullName: [e.firstName, e.lastName].filter(Boolean).join(" "), matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
   });
 
   res.json(result);
@@ -890,7 +890,7 @@ router.delete("/missions/:id/employees/:employeeId", requireAuth, async (req, re
   const durationDays = calcDurationDays(mission.startDate, mission.endDate);
   const result = employees.map(e => {
     const fees = calculateFees(e.category as EmployeeCategory, durationDays);
-    return { employeeId: e.id, fullName: `${e.firstName} ${e.lastName}`, matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
+    return { employeeId: e.id, fullName: [e.firstName, e.lastName].filter(Boolean).join(" "), matricule: e.matricule, nni: e.nni ?? null, position: e.position, category: e.category, ...fees, durationDays };
   });
 
   res.json(result);

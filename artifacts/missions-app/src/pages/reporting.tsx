@@ -300,7 +300,7 @@ export default function Reporting() {
                       {sortedEmployees.map((emp, idx) => (
                         <tr key={emp.employeeId} className="border-b last:border-0 hover:bg-muted/20 transition-colors">
                           <td className="px-4 py-3 text-muted-foreground">{idx + 1}</td>
-                          <td className="px-4 py-3 font-medium">{emp.firstName} {emp.lastName}</td>
+                          <td className="px-4 py-3 font-medium">{[emp.firstName, emp.lastName].filter(Boolean).join(" ")}</td>
                           <td className="px-4 py-3 font-mono text-xs text-muted-foreground">{emp.matricule}</td>
                           <td className="px-4 py-3 text-muted-foreground text-xs">{emp.departmentName}</td>
                           <td className="px-4 py-3 text-right">
