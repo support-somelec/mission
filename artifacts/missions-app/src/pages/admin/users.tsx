@@ -554,7 +554,7 @@ export default function AdminUsers() {
             <AlertDialogTitle>Réinitialiser le mot de passe</AlertDialogTitle>
             <AlertDialogDescription>
               Le mot de passe de <strong>{resetUser?.fullName}</strong> sera réinitialisé au mot de passe
-              par défaut (<strong>Somelec@2024</strong>). L'utilisateur devra le changer lors de sa prochaine connexion.
+              par défaut. L'utilisateur devra le changer lors de sa prochaine connexion.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
