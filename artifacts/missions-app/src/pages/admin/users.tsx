@@ -483,7 +483,7 @@ export default function AdminUsers() {
                   <SelectTrigger id="department">
                     <SelectValue placeholder="Aucun" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     <SelectItem value="none">Aucun département</SelectItem>
                     {deptsData?.data?.map((d) => (
                       <SelectItem key={d.id} value={d.id.toString()}>{d.name}</SelectItem>
