@@ -65,7 +65,7 @@ export default function MissionOrderPrint() {
       </div>
 
       {/* Document */}
-      <div className="max-w-4xl mx-auto print:max-w-none print:shadow-none bg-white border border-gray-200 shadow print:border-0 p-12 print:p-6 text-gray-800 print:text-black text-sm print:text-xs">
+      <div id="om-document" className="max-w-4xl mx-auto print:max-w-none print:shadow-none bg-white border border-gray-200 shadow print:border-0 p-12 print:p-6 text-gray-800 print:text-black text-sm print:text-xs">
 
         {/* Header */}
         <div className="flex justify-between items-start mb-6 print:mb-3">
@@ -73,7 +73,7 @@ export default function MissionOrderPrint() {
             <p className="text-xs uppercase tracking-widest text-gray-400">République Islamique de Mauritanie</p>
             <p className="text-xs text-gray-400">Honneur — Fraternité — Justice</p>
             <div className="mt-3 print:mt-2">
-              <p className="text-xl print:text-lg font-bold tracking-tight">Groupe Somelec</p>
+              <p className="om-header-title text-xl print:text-lg font-bold tracking-tight">Groupe Somelec</p>
               <p className="text-xs text-gray-600">Société Mauritanienne d'Électricité</p>
               {order.departmentName && (
                 <p className="text-sm print:text-xs font-medium text-gray-700 mt-1">{order.departmentName}</p>
@@ -182,7 +182,7 @@ export default function MissionOrderPrint() {
         {/* Signatures */}
         <div className="grid grid-cols-3 gap-6 print:gap-4 text-center text-sm print:text-xs mt-4 print:mt-3">
           <div>
-            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
               CAD Édition
             </p>
             <div className="border-t border-gray-400 pt-2">
@@ -194,7 +194,7 @@ export default function MissionOrderPrint() {
           </div>
 
           <div>
-            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
               Directeur / Chef Dépt.
             </p>
             <div className="border-t border-gray-400 pt-2">
@@ -203,7 +203,7 @@ export default function MissionOrderPrint() {
           </div>
 
           <div>
-            <p className="font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
               Directeur Général
             </p>
             <div className="border-t border-gray-400 pt-2">
@@ -221,13 +221,34 @@ export default function MissionOrderPrint() {
         @media print {
           @page {
             size: A4 portrait;
-            margin: 1cm;
+            margin: 0.8cm;
           }
           body {
-            margin: 0;
-            background: white;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: white !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+          #om-document {
+            font-size: 10px !important;
+            padding: 0 !important;
+            border: none !important;
+            box-shadow: none !important;
+            max-width: 100% !important;
+            width: 100% !important;
+          }
+          #om-document h1 {
+            font-size: 16px !important;
+          }
+          #om-document h2 {
+            font-size: 11px !important;
+          }
+          #om-document .om-header-title {
+            font-size: 15px !important;
+          }
+          #om-document .om-sig-gap {
+            margin-bottom: 2rem !important;
           }
         }
       `}</style>
