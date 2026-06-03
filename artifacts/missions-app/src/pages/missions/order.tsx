@@ -52,8 +52,9 @@ export default function MissionOrderPrint() {
 
   return (
     <div className="min-h-screen bg-gray-100 print:bg-white">
-      {/* Toolbar — hidden when printing */}
-      <div className="print:hidden max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+
+      {/* Toolbar — masqué à l'impression via .om-toolbar dans index.css */}
+      <div className="om-toolbar max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
         <Link href={`/missions/${id}`}>
           <Button variant="outline" size="sm">
             <ArrowLeft className="w-4 h-4 mr-2" /> Retour
@@ -64,27 +65,27 @@ export default function MissionOrderPrint() {
         </Button>
       </div>
 
-      {/* Document */}
-      <div id="om-document" className="max-w-4xl mx-auto print:max-w-none print:shadow-none bg-white border border-gray-200 shadow print:border-0 p-12 print:p-6 text-gray-800 print:text-black text-sm print:text-xs">
+      {/* Document — #om-document ciblé par index.css pour l'impression */}
+      <div id="om-document" className="max-w-4xl mx-auto bg-white border border-gray-200 shadow p-12 text-gray-800 text-sm">
 
         {/* Header */}
-        <div className="flex justify-between items-start mb-6 print:mb-3">
+        <div className="om-section flex justify-between items-start">
           <div className="space-y-1">
             <p className="text-xs uppercase tracking-widest text-gray-400">République Islamique de Mauritanie</p>
             <p className="text-xs text-gray-400">Honneur — Fraternité — Justice</p>
-            <div className="mt-3 print:mt-2">
-              <p className="om-header-title text-xl print:text-lg font-bold tracking-tight">Groupe Somelec</p>
+            <div className="mt-3">
+              <p className="text-xl font-bold tracking-tight">Groupe Somelec</p>
               <p className="text-xs text-gray-600">Société Mauritanienne d'Électricité</p>
               {order.departmentName && (
-                <p className="text-sm print:text-xs font-medium text-gray-700 mt-1">{order.departmentName}</p>
+                <p className="text-sm font-medium text-gray-700 mt-1">{order.departmentName}</p>
               )}
             </div>
           </div>
 
           <div className="text-right space-y-2">
-            <div className="border-2 border-gray-800 px-5 py-2 print:px-3 print:py-1.5 inline-block rounded">
+            <div className="border-2 border-gray-800 px-5 py-2 inline-block rounded">
               <p className="text-xs text-gray-500 mb-1">Numéro d'Ordre</p>
-              <p className="font-mono font-bold text-lg print:text-base tracking-wider">{order.orderNumber}</p>
+              <p className="font-mono font-bold text-lg tracking-wider">{order.orderNumber}</p>
             </div>
             <div className="flex justify-end mt-1">
               <div className="border border-gray-200 p-1 rounded">
@@ -96,20 +97,19 @@ export default function MissionOrderPrint() {
         </div>
 
         {/* Title */}
-        <div className="text-center my-5 print:my-3">
-          <h1 className="text-2xl print:text-xl font-bold uppercase tracking-widest">Ordre de Mission</h1>
+        <div className="om-section text-center">
+          <h1 className="text-2xl font-bold uppercase tracking-widest">Ordre de Mission</h1>
           <div className="w-32 h-0.5 bg-gray-800 mx-auto mt-2" />
         </div>
 
         {/* Mission details */}
-        <div className="mb-4 print:mb-3 space-y-2">
+        <div className="om-section space-y-2">
           <p className="leading-relaxed">
             Il est ordonné aux agents désignés ci-dessous de se rendre à{" "}
             <strong className="uppercase">{order.destination}</strong>{" "}
             dans le cadre de : <em>{order.missionTitle}</em>.
           </p>
-
-          <div className="grid grid-cols-2 gap-3 print:gap-2 mt-3 text-sm print:text-xs">
+          <div className="grid grid-cols-2 gap-3 mt-3">
             <div>
               <span className="text-gray-500 font-medium">Date de départ :</span>{" "}
               <strong>{formatDate(order.startDate)}</strong>
@@ -129,29 +129,29 @@ export default function MissionOrderPrint() {
           </div>
         </div>
 
-        <Separator className="my-4 print:my-2" />
+        <Separator className="my-4" />
 
         {/* Missionnaires */}
-        <div className="mb-4 print:mb-3">
-          <h2 className="font-bold text-sm print:text-xs uppercase tracking-widest mb-3 print:mb-2 text-gray-700">
+        <div className="om-section">
+          <h2 className="font-bold text-sm uppercase tracking-widest text-gray-700">
             Liste des Missionnaires
           </h2>
-          <table className="w-full border-collapse text-sm print:text-xs">
+          <table className="w-full border-collapse text-sm">
             <thead>
-              <tr className="bg-gray-100 print:bg-gray-100">
-                <th className="border border-gray-300 px-3 py-2 print:px-2 print:py-1.5 text-left font-semibold w-8">N°</th>
-                <th className="border border-gray-300 px-3 py-2 print:px-2 print:py-1.5 text-left font-semibold">Nom Complet</th>
-                <th className="border border-gray-300 px-3 py-2 print:px-2 print:py-1.5 text-left font-semibold">Matricule</th>
-                <th className="border border-gray-300 px-3 py-2 print:px-2 print:py-1.5 text-left font-semibold">Poste / Fonction</th>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold w-8">N°</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Nom Complet</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Matricule</th>
+                <th className="border border-gray-300 px-3 py-2 text-left font-semibold">Poste / Fonction</th>
               </tr>
             </thead>
             <tbody>
               {order.employees.map((emp, i) => (
-                <tr key={emp.employeeId} className={i % 2 === 0 ? "" : "bg-gray-50 print:bg-gray-50"}>
-                  <td className="border border-gray-300 px-3 py-2 print:px-2 print:py-1 text-center text-gray-500">{i + 1}</td>
-                  <td className="border border-gray-300 px-3 py-2 print:px-2 print:py-1 font-medium">{emp.fullName}</td>
-                  <td className="border border-gray-300 px-3 py-2 print:px-2 print:py-1 font-mono text-xs">{emp.matricule}</td>
-                  <td className="border border-gray-300 px-3 py-2 print:px-2 print:py-1">{emp.position}</td>
+                <tr key={emp.employeeId} className={i % 2 === 0 ? "" : "bg-gray-50"}>
+                  <td className="border border-gray-300 px-3 py-2 text-center text-gray-500">{i + 1}</td>
+                  <td className="border border-gray-300 px-3 py-2 font-medium">{emp.fullName}</td>
+                  <td className="border border-gray-300 px-3 py-2 font-mono text-xs">{emp.matricule}</td>
+                  <td className="border border-gray-300 px-3 py-2">{emp.position}</td>
                 </tr>
               ))}
             </tbody>
@@ -159,9 +159,9 @@ export default function MissionOrderPrint() {
         </div>
 
         {/* Logistics */}
-        <div className="mb-4 print:mb-3 text-sm print:text-xs">
-          <h2 className="font-bold text-sm print:text-xs uppercase tracking-widest mb-2 text-gray-700">Moyens Logistiques</h2>
-          <ul className="list-disc pl-6 space-y-1">
+        <div className="om-section">
+          <h2 className="font-bold text-sm uppercase tracking-widest text-gray-700">Moyens Logistiques</h2>
+          <ul className="list-disc pl-6 space-y-1 mt-2">
             <li>
               Véhicule SOMELEC :{" "}
               {order.requiresVehicle
@@ -177,12 +177,12 @@ export default function MissionOrderPrint() {
           </ul>
         </div>
 
-        <Separator className="my-4 print:my-3" />
+        <Separator className="my-4" />
 
         {/* Signatures */}
-        <div className="grid grid-cols-3 gap-6 print:gap-4 text-center text-sm print:text-xs mt-4 print:mt-3">
+        <div className="om-section grid grid-cols-3 gap-6 text-center text-sm">
           <div>
-            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-12">
               CAD Édition
             </p>
             <div className="border-t border-gray-400 pt-2">
@@ -192,18 +192,16 @@ export default function MissionOrderPrint() {
               </p>
             </div>
           </div>
-
           <div>
-            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-12">
               Directeur / Chef Dépt.
             </p>
             <div className="border-t border-gray-400 pt-2">
               <p className="text-xs text-gray-400">Cachet &amp; Signature</p>
             </div>
           </div>
-
           <div>
-            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-10 print:mb-8">
+            <p className="om-sig-gap font-semibold text-xs uppercase tracking-wide text-gray-600 mb-12">
               Directeur Général
             </p>
             <div className="border-t border-gray-400 pt-2">
@@ -212,46 +210,10 @@ export default function MissionOrderPrint() {
           </div>
         </div>
 
-        <div className="mt-6 print:mt-4 border-t border-gray-200 pt-3 text-center text-xs text-gray-400 print:text-gray-500">
+        <div className="mt-6 border-t border-gray-200 pt-3 text-center text-xs text-gray-400">
           Document officiel généré électroniquement — Système de Gestion des Missions SOMELEC — {order.orderNumber}
         </div>
       </div>
-
-      <style>{`
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 0.8cm;
-          }
-          body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: white !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          #om-document {
-            font-size: 10px !important;
-            padding: 0 !important;
-            border: none !important;
-            box-shadow: none !important;
-            max-width: 100% !important;
-            width: 100% !important;
-          }
-          #om-document h1 {
-            font-size: 16px !important;
-          }
-          #om-document h2 {
-            font-size: 11px !important;
-          }
-          #om-document .om-header-title {
-            font-size: 15px !important;
-          }
-          #om-document .om-sig-gap {
-            margin-bottom: 2rem !important;
-          }
-        }
-      `}</style>
     </div>
   );
 }

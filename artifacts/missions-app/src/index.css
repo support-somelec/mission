@@ -237,6 +237,63 @@
   }
 }
 
+/* ── Impression ordre de mission ─────────────────────────────────── */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 0.8cm;
+  }
+
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Cache la barre d'outils */
+  .om-toolbar {
+    display: none !important;
+  }
+
+  /* Conteneur principal du document */
+  #om-document {
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    margin: 0 !important;
+  }
+
+  #om-document h1 {
+    font-size: 1.5rem !important;
+    margin-bottom: 0.25rem !important;
+  }
+
+  #om-document h2 {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  #om-document .om-section {
+    margin-bottom: 0.75rem !important;
+  }
+
+  #om-document .om-sig-gap {
+    margin-bottom: 2rem !important;
+  }
+
+  #om-document table th,
+  #om-document table td {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 1rem !important;
+  }
+}
+
 @layer utilities {
 
   /* Hide ugly search cancel button in Chrome until we can style it properly */
