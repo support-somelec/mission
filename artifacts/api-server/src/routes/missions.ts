@@ -44,9 +44,42 @@ const TRANSVERSAL_ROLES = [
   "admin",
 ];
 
+/** Renvoie true si l'utilisateur est autorisé à consulter cette mission */
+async function canUserSeeMission(
+  mission: { departmentId: number | null; createdByUserId: number },
+  userId: number,
+  userRole: string,
+  userDepartmentId: number | null | undefined,
+): Promise<boolean> {
+  if (TRANSVERSAL_ROLES.includes(userRole)) return true;
+
+  if (userRole === "central_director" && userDepartmentId) {
+    if (mission.departmentId === userDepartmentId) return true;
+    if (!mission.departmentId) return false;
+    // Vérifie que le département de la mission est un enfant direct du département du directeur central
+    const [child] = await db
+      .select({ id: departmentsTable.id })
+      .from(departmentsTable)
+      .where(
+        sql`${departmentsTable.id} = ${mission.departmentId} AND ${departmentsTable.parentId} = ${userDepartmentId}`
+      );
+    return !!child;
+  }
+
+  if (userRole === "director" && userDepartmentId) {
+    return mission.departmentId === userDepartmentId;
+  }
+
+  // employee ou directeur sans département : uniquement ses propres missions
+  return mission.createdByUserId === userId;
+}
+
 async function getMissionWithDetails(id: number, userId: number, userRole: string, userDepartmentId: number | null | undefined) {
   const [mission] = await db.select().from(missionsTable).where(eq(missionsTable.id, id));
   if (!mission) return null;
+
+  const allowed = await canUserSeeMission(mission, userId, userRole, userDepartmentId);
+  if (!allowed) return "forbidden" as const;
 
   const [creator] = await db.select({ fullName: usersTable.fullName }).from(usersTable).where(eq(usersTable.id, mission.createdByUserId));
   const [dept] = mission.departmentId
@@ -357,6 +390,10 @@ router.post("/missions", requireAuth, async (req, res): Promise<void> => {
   }
 
   const detail = await getMissionWithDetails(mission.id, userId, userRole, userDeptId);
+  if (!detail || detail === "forbidden") {
+    res.status(500).json({ error: "Erreur lors de la récupération de la mission créée" });
+    return;
+  }
   res.status(201).json(detail);
 });
 
@@ -370,6 +407,10 @@ router.get("/missions/:id", requireAuth, async (req, res): Promise<void> => {
   const detail = await getMissionWithDetails(params.data.id, req.userId!, req.userRole!, req.userDepartmentId);
   if (!detail) {
     res.status(404).json({ error: "Mission non trouvée" });
+    return;
+  }
+  if (detail === "forbidden") {
+    res.status(403).json({ error: "Accès refusé à cette mission" });
     return;
   }
 
@@ -420,6 +461,10 @@ router.patch("/missions/:id", requireAuth, async (req, res): Promise<void> => {
   }
 
   const detail = await getMissionWithDetails(params.data.id, req.userId!, req.userRole!, req.userDepartmentId);
+  if (!detail || detail === "forbidden") {
+    res.status(detail === "forbidden" ? 403 : 404).json({ error: detail === "forbidden" ? "Accès refusé" : "Mission non trouvée" });
+    return;
+  }
   res.json(detail);
 });
 
@@ -498,6 +543,10 @@ router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<voi
     .where(eq(missionsTable.id, mission.id));
 
   const detail = await getMissionWithDetails(mission.id, req.userId!, userRole, req.userDepartmentId);
+  if (!detail || detail === "forbidden") {
+    res.status(detail === "forbidden" ? 403 : 404).json({ error: detail === "forbidden" ? "Accès refusé" : "Mission non trouvée" });
+    return;
+  }
   res.json(detail);
 });
 
@@ -554,6 +603,10 @@ router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Prom
   }
 
   const detail = await getMissionWithDetails(params.data.id, req.userId!, req.userRole!, req.userDepartmentId);
+  if (!detail || detail === "forbidden") {
+    res.status(detail === "forbidden" ? 403 : 404).json({ error: detail === "forbidden" ? "Accès refusé" : "Mission non trouvée" });
+    return;
+  }
   res.json(detail);
 });
 
