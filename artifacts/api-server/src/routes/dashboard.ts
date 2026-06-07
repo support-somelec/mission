@@ -9,6 +9,18 @@ import { type MissionStatus, type UserRole } from "../lib/mission-workflow";
 
 const router: IRouter = Router();
 
+// Rôles qui voient TOUTES les missions sans restriction de département
+const TRANSVERSAL_ROLES = [
+  "technical_control",
+  "dga",
+  "dmg",
+  "cad_edition",
+  "cad_payment",
+  "financial_control",
+  "admin",
+];
+
+// Rôles qui peuvent valider des missions (utilisé pour l'onglet "À valider")
 const VALIDATOR_ROLES = [
   "director",
   "central_director",
@@ -20,6 +32,27 @@ const VALIDATOR_ROLES = [
   "financial_control",
   "admin",
 ];
+
+/** Calcule la condition de périmètre de visibilité des missions pour un utilisateur */
+async function buildMissionScope(userRole: string, userId: number, userDeptId: number | null | undefined) {
+  if (TRANSVERSAL_ROLES.includes(userRole)) return undefined; // pas de filtre
+
+  if (userRole === "central_director" && userDeptId) {
+    const childDepts = await db
+      .select({ id: departmentsTable.id })
+      .from(departmentsTable)
+      .where(eq(departmentsTable.parentId, userDeptId));
+    const visibleDeptIds = [userDeptId, ...childDepts.map(d => d.id)];
+    return inArray(missionsTable.departmentId, visibleDeptIds);
+  }
+
+  if (userRole === "director" && userDeptId) {
+    return eq(missionsTable.departmentId, userDeptId);
+  }
+
+  // employee ou directeur sans département : ses propres missions uniquement
+  return eq(missionsTable.createdByUserId, userId);
+}
 
 const STATUS_LABELS: Record<string, string> = {
   draft: "Brouillon",
@@ -51,14 +84,7 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
   const userDeptId = req.userDepartmentId;
 
-  const isValidator = VALIDATOR_ROLES.includes(userRole);
-
-  let missionScope;
-  if (!isValidator && userDeptId) {
-    missionScope = eq(missionsTable.departmentId, userDeptId);
-  } else if (!isValidator) {
-    missionScope = eq(missionsTable.createdByUserId, userId);
-  }
+  const missionScope = await buildMissionScope(userRole, userId, userDeptId);
 
   const [totalResult] = await db
     .select({ count: sql<number>`count(*)::int` })
@@ -209,13 +235,7 @@ router.get("/dashboard/recent-missions", requireAuth, async (req, res): Promise<
   const userRole = req.userRole!;
   const userDeptId = req.userDepartmentId;
 
-  const isValidator = VALIDATOR_ROLES.includes(userRole);
-  let condition;
-  if (!isValidator && userDeptId) {
-    condition = eq(missionsTable.departmentId, userDeptId);
-  } else if (!isValidator) {
-    condition = eq(missionsTable.createdByUserId, userId);
-  }
+  const condition = await buildMissionScope(userRole, userId, userDeptId);
 
   const missions = await db
     .select()
