@@ -84,6 +84,7 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
   const userId = req.userId!;
   const userDeptId = req.userDepartmentId;
 
+  const isValidator = VALIDATOR_ROLES.includes(userRole);
   const missionScope = await buildMissionScope(userRole, userId, userDeptId);
 
   const [totalResult] = await db
