@@ -1774,6 +1774,8 @@ components:
           type: integer
         inProgress:
           type: integer
+        totalCost:
+          type: number
       required:
         - departmentId
         - departmentName
@@ -1781,6 +1783,7 @@ components:
         - approved
         - rejected
         - inProgress
+        - totalCost
 
     ReportingByMonth:
       type: object
@@ -1797,6 +1800,8 @@ components:
           type: integer
         rejected:
           type: integer
+        totalCost:
+          type: number
       required:
         - year
         - month
@@ -1804,6 +1809,7 @@ components:
         - total
         - approved
         - rejected
+        - totalCost
 
     ReportingByEmployee:
       type: object
@@ -1820,11 +1826,14 @@ components:
           type: string
         missionCount:
           type: integer
+        totalFees:
+          type: number
       required:
         - employeeId
         - lastName
         - departmentName
         - missionCount
+        - totalFees
 
     ReportingData:
       type: object
@@ -1849,6 +1858,12 @@ components:
           type: integer
         totalInProgress:
           type: integer
+        totalCost:
+          type: number
+        totalPaidCost:
+          type: number
+        totalRemainingCost:
+          type: number
       required:
         - byDepartment
         - byMonth
@@ -1857,3 +1872,6 @@ components:
         - totalApproved
         - totalRejected
         - totalInProgress
+        - totalCost
+        - totalPaidCost
+        - totalRemainingCost

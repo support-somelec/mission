@@ -473,6 +473,7 @@ export interface ReportingByDepartment {
   approved: number;
   rejected: number;
   inProgress: number;
+  totalCost: number;
 }
 
 export interface ReportingByMonth {
@@ -482,6 +483,7 @@ export interface ReportingByMonth {
   total: number;
   approved: number;
   rejected: number;
+  totalCost: number;
 }
 
 export interface ReportingByEmployee {
@@ -493,6 +495,7 @@ export interface ReportingByEmployee {
   matricule?: string | null;
   departmentName: string;
   missionCount: number;
+  totalFees: number;
 }
 
 export interface ReportingData {
@@ -503,6 +506,9 @@ export interface ReportingData {
   totalApproved: number;
   totalRejected: number;
   totalInProgress: number;
+  totalCost: number;
+  totalPaidCost: number;
+  totalRemainingCost: number;
 }
 
 export type ListDepartmentsParams = {

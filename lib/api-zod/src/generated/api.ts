@@ -1217,6 +1217,7 @@ export const GetReportingResponse = zod.object({
       approved: zod.number(),
       rejected: zod.number(),
       inProgress: zod.number(),
+      totalCost: zod.number(),
     }),
   ),
   byMonth: zod.array(
@@ -1227,6 +1228,7 @@ export const GetReportingResponse = zod.object({
       total: zod.number(),
       approved: zod.number(),
       rejected: zod.number(),
+      totalCost: zod.number(),
     }),
   ),
   byEmployee: zod.array(
@@ -1237,10 +1239,14 @@ export const GetReportingResponse = zod.object({
       matricule: zod.string().nullish(),
       departmentName: zod.string(),
       missionCount: zod.number(),
+      totalFees: zod.number(),
     }),
   ),
   totalMissions: zod.number(),
   totalApproved: zod.number(),
   totalRejected: zod.number(),
   totalInProgress: zod.number(),
+  totalCost: zod.number(),
+  totalPaidCost: zod.number(),
+  totalRemainingCost: zod.number(),
 });

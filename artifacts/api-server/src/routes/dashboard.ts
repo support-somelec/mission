@@ -3,7 +3,7 @@ import { eq, sql, and, inArray, gte, lte } from "drizzle-orm";
 import { db, missionsTable, usersTable, departmentsTable, employeesTable } from "@workspace/db";
 import { GetPendingValidationsQueryParams } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/session";
-import { calcDurationDays } from "../lib/fees";
+import { calcDurationDays, calculateFees, type EmployeeCategory } from "../lib/fees";
 import { missionEmployeesTable } from "@workspace/db";
 import { type MissionStatus, type UserRole } from "../lib/mission-workflow";
 
@@ -112,10 +112,15 @@ router.get("/dashboard/stats", requireAuth, async (req, res): Promise<void> => {
     pendingCondition = sql`false`;
   }
 
+  const pendingScopedCondition =
+    missionScope && userRole !== "admin"
+      ? and(missionScope, pendingCondition)
+      : pendingCondition;
+
   const [pendingResult] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(missionsTable)
-    .where(pendingCondition);
+    .where(pendingScopedCondition);
 
   const [totalEmps] = await db.select({ count: sql<number>`count(*)::int` }).from(employeesTable);
   const [totalDepts] = await db.select({ count: sql<number>`count(*)::int` }).from(departmentsTable);
@@ -384,6 +389,7 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
           lastName: employeesTable.lastName,
           matricule: employeesTable.matricule,
           departmentId: employeesTable.departmentId,
+          category: employeesTable.category,
         })
         .from(employeesTable)
         .where(inArray(employeesTable.id, empIds))
@@ -396,6 +402,84 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
   const empDeptMap = new Map(empDepts.map(d => [d.id, d.name]));
   const empMap = new Map(emps.map(e => [e.id, e]));
 
+  // ── Calcul des coûts ───────────────────────────────────────────────────────
+  // Récupère toutes les missions de l'année (baseConditions, sans filtre mois)
+  // pour alimenter le graphique mensuel, puis on applique le filtre mois côté JS.
+  const allMissionsForCost = await db
+    .select({
+      id: missionsTable.id,
+      startDate: missionsTable.startDate,
+      endDate: missionsTable.endDate,
+      departmentId: missionsTable.departmentId,
+      createdAt: missionsTable.createdAt,
+    })
+    .from(missionsTable)
+    .where(and(...baseConditions));
+
+  const allCostMissionIds = allMissionsForCost.map(m => m.id);
+
+  const costMissionEmps = allCostMissionIds.length > 0
+    ? await db
+        .select({
+          missionId: missionEmployeesTable.missionId,
+          employeeId: missionEmployeesTable.employeeId,
+          category: employeesTable.category,
+        })
+        .from(missionEmployeesTable)
+        .innerJoin(employeesTable, eq(missionEmployeesTable.employeeId, employeesTable.id))
+        .where(inArray(missionEmployeesTable.missionId, allCostMissionIds))
+    : [];
+
+  const costMissionEmpMap = new Map<number, Array<{ employeeId: number; category: string }>>();
+  for (const me of costMissionEmps) {
+    if (!costMissionEmpMap.has(me.missionId)) costMissionEmpMap.set(me.missionId, []);
+    costMissionEmpMap.get(me.missionId)!.push({ employeeId: me.employeeId, category: me.category });
+  }
+
+  // Maps de coût : mois → totalCost, département → totalCost (filtre mois appliqué côté JS)
+  const monthCostMap = new Map<number, number>();
+  const deptCostMap = new Map<number, number>();
+  const empFeeMap = new Map<number, number>();
+  let grandTotalCost = 0;
+
+  for (const m of allMissionsForCost) {
+    const duration = calcDurationDays(m.startDate, m.endDate);
+    const missionEmpsForCost = costMissionEmpMap.get(m.id) ?? [];
+    const missionCost = missionEmpsForCost.reduce(
+      (sum, e) => sum + calculateFees(e.category as EmployeeCategory, duration).totalFee,
+      0,
+    );
+    const monthNum = new Date(m.createdAt).getMonth() + 1;
+
+    // Chart mensuel : tous les mois sans filtre mois
+    monthCostMap.set(monthNum, (monthCostMap.get(monthNum) ?? 0) + missionCost);
+
+    // KPIs et tableau par direction : applique le filtre mois si présent
+    if (monthParam && monthNum !== monthParam) continue;
+
+    if (m.departmentId) {
+      deptCostMap.set(m.departmentId, (deptCostMap.get(m.departmentId) ?? 0) + missionCost);
+    }
+    grandTotalCost += missionCost;
+
+    // Coût par agent
+    for (const e of missionEmpsForCost) {
+      const empFee = calculateFees(e.category as EmployeeCategory, duration).totalFee;
+      empFeeMap.set(e.employeeId, (empFeeMap.get(e.employeeId) ?? 0) + empFee);
+    }
+  }
+
+  // Injecter les coûts dans byDepartment et byMonth
+  const byDepartmentWithCost = byDepartment.map(d => ({
+    ...d,
+    totalCost: Math.round(deptCostMap.get(d.departmentId) ?? 0),
+  }));
+
+  const byMonthWithCost = byMonth.map(m => ({
+    ...m,
+    totalCost: Math.round(monthCostMap.get(m.month) ?? 0),
+  }));
+
   const byEmployee = byEmployeeRaw.map(r => {
     const emp = empMap.get(r.employeeId);
     return {
@@ -405,6 +489,7 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
       matricule: emp?.matricule ?? "",
       departmentName: emp?.departmentId ? (empDeptMap.get(emp.departmentId) ?? "—") : "—",
       missionCount: r.count,
+      totalFees: Math.round(empFeeMap.get(r.employeeId) ?? 0),
     };
   });
 
@@ -413,8 +498,21 @@ router.get("/dashboard/reporting", requireAuth, async (req, res): Promise<void> 
   const totalApproved = byDepartment.reduce((s, d) => s + d.approved, 0);
   const totalRejected = byDepartment.reduce((s, d) => s + d.rejected, 0);
   const totalInProgress = byDepartment.reduce((s, d) => s + d.inProgress, 0);
+  const totalPaidCost = Math.round(grandTotalCost * 0.70);
+  const totalRemainingCost = Math.round(grandTotalCost - totalPaidCost);
 
-  res.json({ byDepartment, byMonth, byEmployee, totalMissions, totalApproved, totalRejected, totalInProgress });
+  res.json({
+    byDepartment: byDepartmentWithCost,
+    byMonth: byMonthWithCost,
+    byEmployee,
+    totalMissions,
+    totalApproved,
+    totalRejected,
+    totalInProgress,
+    totalCost: Math.round(grandTotalCost),
+    totalPaidCost,
+    totalRemainingCost,
+  });
 });
 
 export default router;

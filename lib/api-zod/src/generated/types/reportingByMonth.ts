@@ -13,4 +13,5 @@ export interface ReportingByMonth {
   total: number;
   approved: number;
   rejected: number;
+  totalCost: number;
 }

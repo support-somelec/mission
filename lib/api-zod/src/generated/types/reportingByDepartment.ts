@@ -13,4 +13,5 @@ export interface ReportingByDepartment {
   approved: number;
   rejected: number;
   inProgress: number;
+  totalCost: number;
 }

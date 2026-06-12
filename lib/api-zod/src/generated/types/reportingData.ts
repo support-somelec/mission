@@ -17,4 +17,7 @@ export interface ReportingData {
   totalApproved: number;
   totalRejected: number;
   totalInProgress: number;
+  totalCost: number;
+  totalPaidCost: number;
+  totalRemainingCost: number;
 }

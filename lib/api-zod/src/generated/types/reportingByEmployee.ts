@@ -15,4 +15,5 @@ export interface ReportingByEmployee {
   matricule?: string | null;
   departmentName: string;
   missionCount: number;
+  totalFees: number;
 }
