@@ -430,9 +430,37 @@ router.patch("/missions/:id", requireAuth, async (req, res): Promise<void> => {
     return;
   }
 
-  if (existing.status !== "draft" && req.userRole !== "admin") {
-    res.status(403).json({ error: "Impossible de modifier une mission en cours de validation" });
+  const EDITABLE_STATUSES = ["draft", "pending_director", "pending_central_director"];
+  if (!EDITABLE_STATUSES.includes(existing.status) && req.userRole !== "admin") {
+    res.status(403).json({ error: "La mission ne peut plus être modifiée après validation du Directeur Central" });
     return;
+  }
+
+  {
+    const userId = req.userId!;
+    const userRole = req.userRole!;
+    const userDeptId = req.userDepartmentId;
+    let canEdit = userRole === "admin" || existing.createdByUserId === userId;
+
+    if (!canEdit && userRole === "director" && existing.departmentId === userDeptId) {
+      canEdit = true;
+    }
+    if (!canEdit && userRole === "central_director" && userDeptId) {
+      if (existing.departmentId === userDeptId) {
+        canEdit = true;
+      } else if (existing.departmentId) {
+        const [missionDept] = await db
+          .select({ parentId: departmentsTable.parentId })
+          .from(departmentsTable)
+          .where(eq(departmentsTable.id, existing.departmentId));
+        if (missionDept?.parentId === userDeptId) canEdit = true;
+      }
+    }
+
+    if (!canEdit) {
+      res.status(403).json({ error: "Vous n'êtes pas autorisé à modifier cette mission" });
+      return;
+    }
   }
 
   const parsed = UpdateMissionBody.safeParse(req.body);

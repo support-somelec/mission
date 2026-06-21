@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
   ArrowLeft, Printer, CheckCircle, XCircle, CarFront, FileText, 
-  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search, AlertTriangle
+  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search, AlertTriangle, Pencil
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -208,6 +208,14 @@ export default function MissionDetail() {
   const isCADEdition = role === "cad_edition";
   const isCADPayment = role === "cad_payment";
 
+  const EDITABLE_STATUSES = ["draft", "pending_director", "pending_central_director"];
+  const canEditMission =
+    EDITABLE_STATUSES.includes(mission.status) &&
+    (role === "admin" ||
+      mission.createdByUserId === user?.id ||
+      role === "director" ||
+      role === "central_director");
+
   const canAssignVehicles = isCurrentValidator && isDMG;
   const canGenerateOrder = isCurrentValidator && isCADEdition && mission.status === "en_vigueur" && !mission.orderNumber;
   const canPrintOrder = !!mission.orderNumber && (isCADEdition || role === "admin");
@@ -263,6 +271,15 @@ export default function MissionDetail() {
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
+          {/* Edit mission */}
+          {canEditMission && (
+            <Link href={`/missions/${mission.id}/edit`}>
+              <Button variant="outline" size="sm">
+                <Pencil className="w-4 h-4 mr-2" /> Modifier
+              </Button>
+            </Link>
+          )}
+
           {/* Admin — Delete mission */}
           {role === "admin" && (
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>

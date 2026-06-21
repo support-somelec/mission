@@ -9,6 +9,7 @@ import Login from "@/pages/login";
 import Dashboard from "@/pages/dashboard";
 import MissionsList from "@/pages/missions/index";
 import MissionNew from "@/pages/missions/new";
+import MissionEdit from "@/pages/missions/edit";
 import MissionDetail from "@/pages/missions/detail";
 import MissionOrderPrint from "@/pages/missions/order";
 import MissionPaymentReceipt from "@/pages/missions/payment-receipt";
@@ -64,6 +65,10 @@ function AppRouter() {
 
       <Route path="/missions/new">
         {() => <ProtectedRoute component={MissionNew} />}
+      </Route>
+
+      <Route path="/missions/:id/edit">
+        {() => <ProtectedRoute component={MissionEdit} />}
       </Route>
 
       <Route path="/missions/:id/order">
