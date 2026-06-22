@@ -31,6 +31,7 @@ export const LoginResponse = zod.object({
     role: zod.enum([
       "admin",
       "employee",
+      "cadre",
       "director",
       "central_director",
       "technical_control",
@@ -91,6 +92,7 @@ export const GetCurrentUserResponse = zod.object({
   role: zod.enum([
     "admin",
     "employee",
+    "cadre",
     "director",
     "central_director",
     "technical_control",
@@ -349,6 +351,7 @@ export const ListUsersResponse = zod.object({
       role: zod.enum([
         "admin",
         "employee",
+        "cadre",
         "director",
         "central_director",
         "technical_control",
@@ -400,6 +403,7 @@ export const GetUserResponse = zod.object({
   role: zod.enum([
     "admin",
     "employee",
+    "cadre",
     "director",
     "central_director",
     "technical_control",
@@ -442,6 +446,7 @@ export const UpdateUserResponse = zod.object({
   role: zod.enum([
     "admin",
     "employee",
+    "cadre",
     "director",
     "central_director",
     "technical_control",

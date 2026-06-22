@@ -191,7 +191,7 @@ export default function AdminUsers() {
       username: form.username,
       fullName: form.fullName,
       email: form.email || undefined,
-      role: form.role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control",
+      role: form.role as "admin" | "employee" | "cadre" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control",
       departmentId: deptId ?? undefined,
       password: form.password || undefined,
     };

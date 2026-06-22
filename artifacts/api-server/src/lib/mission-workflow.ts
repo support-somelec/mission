@@ -14,6 +14,7 @@ export type MissionStatus =
 export type UserRole =
   | "admin"
   | "employee"
+  | "cadre"
   | "director"
   | "central_director"
   | "technical_control"
@@ -63,7 +64,7 @@ export function getInitialStatus(creatorRole: UserRole): MissionStatus {
   if (creatorRole === "central_director") {
     return "pending_technical_control";
   }
-  if (creatorRole === "director") {
+  if (creatorRole === "director" || creatorRole === "cadre") {
     return "pending_central_director";
   }
   return "pending_director";

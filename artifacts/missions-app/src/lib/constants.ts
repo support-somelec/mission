@@ -37,6 +37,7 @@ export const EMPLOYEE_CATEGORY_LABELS: Record<string, string> = {
 export const ROLE_LABELS: Record<string, string> = {
   admin: "Administrateur",
   employee: "Utilisateur Simple",
+  cadre: "Cadre (Validation DC directe)",
   director: "Directeur",
   central_director: "Directeur Central",
   technical_control: "Contrôle Technique",

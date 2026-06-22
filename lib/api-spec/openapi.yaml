@@ -1031,6 +1031,7 @@ components:
           enum:
             - admin
             - employee
+            - cadre
             - director
             - central_director
             - technical_control
