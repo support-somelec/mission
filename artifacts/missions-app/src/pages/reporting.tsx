@@ -7,10 +7,12 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   TrendingUp, CheckCircle, XCircle, Clock, BarChart3,
-  ArrowUpDown, ArrowUp, ArrowDown, Banknote, Wallet, CreditCard,
+  ArrowUpDown, ArrowUp, ArrowDown, Banknote, Wallet, CreditCard, Download,
 } from "lucide-react";
+import { useAuth } from "@/hooks/use-auth";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = Array.from({ length: 5 }, (_, i) => CURRENT_YEAR - i);
@@ -88,9 +90,32 @@ function CostTooltip({ active, payload, label }: { active?: boolean; payload?: A
 }
 
 export default function Reporting() {
+  const { user } = useAuth();
   const [year, setYear] = useState<number>(CURRENT_YEAR);
   const [month, setMonth] = useState<string>("all");
   const [departmentId, setDepartmentId] = useState<string>("all");
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExportCSV = async () => {
+    setIsExporting(true);
+    try {
+      const resp = await fetch("/api/missions/export", { credentials: "include" });
+      if (!resp.ok) throw new Error("Erreur serveur");
+      const blob = await resp.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `missions-somelec-${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      alert("Erreur lors de l'export CSV.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
   const [sortCol, setSortCol] = useState<string>("missionCount");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
 
@@ -144,6 +169,22 @@ export default function Reporting() {
           <p className="text-muted-foreground text-sm mt-1">
             Analyse des missions par direction, par mois et par agent
           </p>
+        </div>
+
+        {/* Export CSV (admin only) */}
+        <div className="flex gap-2 flex-wrap items-start">
+          {user?.role === "admin" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportCSV}
+              disabled={isExporting}
+              className="whitespace-nowrap"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              {isExporting ? "Export en cours..." : "Exporter CSV"}
+            </Button>
+          )}
         </div>
 
         {/* Filtres */}

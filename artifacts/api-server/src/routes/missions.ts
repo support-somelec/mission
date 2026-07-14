@@ -21,7 +21,7 @@ import {
   AddMissionEmployeeBody,
   RemoveMissionEmployeeParams,
 } from "@workspace/api-zod";
-import { requireAuth } from "../middlewares/session";
+import { requireAuth, requireAdmin } from "../middlewares/session";
 import {
   canUserValidate,
   getInitialStatus,
@@ -395,6 +395,148 @@ router.post("/missions", requireAuth, async (req, res): Promise<void> => {
     return;
   }
   res.status(201).json(detail);
+});
+
+router.get("/missions/export", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  const STATUS_FR: Record<string, string> = {
+    draft: "Brouillon",
+    pending_director: "En attente Directeur",
+    pending_central_director: "En attente Dir. Central",
+    pending_technical_control: "En attente Contrôle Technique",
+    pending_dga: "En attente DGA",
+    pending_dmg: "En attente DMG",
+    en_vigueur: "En Vigueur",
+    pending_cad_payment: "En attente CAD Paiement",
+    pending_financial_control: "En attente Contrôle Financier",
+    approved: "Approuvée",
+    rejected: "Rejetée",
+  };
+  const CATEGORY_FR: Record<string, string> = {
+    dg_dga: "DG/DGA",
+    director: "Directeur",
+    chef_department: "Chef Dépt/Service",
+    other_cadre: "Autre Cadre",
+    agent: "Agent",
+  };
+
+  const missions = await db
+    .select({
+      id: missionsTable.id,
+      orderNumber: missionsTable.orderNumber,
+      title: missionsTable.title,
+      status: missionsTable.status,
+      startDate: missionsTable.startDate,
+      endDate: missionsTable.endDate,
+      destination: missionsTable.destination,
+      requiresVehicle: missionsTable.requiresVehicle,
+      vehicleCount: missionsTable.vehicleCount,
+      vehicleDetails: missionsTable.vehicleDetails,
+      requiresFuel: missionsTable.requiresFuel,
+      createdAt: missionsTable.createdAt,
+      departmentId: missionsTable.departmentId,
+      createdByUserId: missionsTable.createdByUserId,
+    })
+    .from(missionsTable)
+    .orderBy(missionsTable.createdAt);
+
+  const deptIds = [...new Set(missions.map((m) => m.departmentId).filter((x): x is number => x != null))];
+  const deptMap = new Map<number, string>();
+  if (deptIds.length > 0) {
+    const depts = await db.select({ id: departmentsTable.id, name: departmentsTable.name }).from(departmentsTable).where(inArray(departmentsTable.id, deptIds));
+    for (const d of depts) deptMap.set(d.id, d.name);
+  }
+
+  const creatorIds = [...new Set(missions.map((m) => m.createdByUserId).filter((x): x is number => x != null))];
+  const creatorMap = new Map<number, string>();
+  if (creatorIds.length > 0) {
+    const users = await db.select({ id: usersTable.id, fullName: usersTable.fullName }).from(usersTable).where(inArray(usersTable.id, creatorIds));
+    for (const u of users) creatorMap.set(u.id, u.fullName);
+  }
+
+  const missionIds = missions.map((m) => m.id);
+  const allEmps = missionIds.length > 0
+    ? await db
+        .select({
+          missionId: missionEmployeesTable.missionId,
+          matricule: employeesTable.matricule,
+          firstName: employeesTable.firstName,
+          lastName: employeesTable.lastName,
+          position: employeesTable.position,
+          category: employeesTable.category,
+        })
+        .from(missionEmployeesTable)
+        .innerJoin(employeesTable, eq(missionEmployeesTable.employeeId, employeesTable.id))
+        .where(inArray(missionEmployeesTable.missionId, missionIds))
+    : [];
+
+  const empsByMission = new Map<number, typeof allEmps>();
+  for (const emp of allEmps) {
+    if (!empsByMission.has(emp.missionId)) empsByMission.set(emp.missionId, []);
+    empsByMission.get(emp.missionId)!.push(emp);
+  }
+
+  const esc = (v: unknown): string => {
+    const s = v == null ? "" : String(v);
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? `"${s.replace(/"/g, '""')}"`
+      : s;
+  };
+
+  const headers = [
+    "ID Mission", "N° Ordre de Mission", "Titre", "Statut",
+    "Département", "Créé par", "Date Début", "Date Fin", "Durée (jours)", "Destination",
+    "Véhicule requis", "Nb Véhicules", "Détails véhicules", "Carburant requis",
+    "Frais total mission (MRU)",
+    "Employé - Matricule", "Employé - Nom", "Employé - Poste", "Employé - Catégorie",
+    "Taux journalier (MRU)", "Frais employé (MRU)", "Part CAD 70% (MRU)", "Part DRH 30% (MRU)",
+    "Date de création",
+  ];
+
+  const rows: string[] = [headers.map(esc).join(",")];
+
+  for (const m of missions) {
+    const duration = calcDurationDays(m.startDate, m.endDate);
+    const dept = deptMap.get(m.departmentId ?? 0) ?? "";
+    const creator = creatorMap.get(m.createdByUserId ?? 0) ?? "";
+    const emps = empsByMission.get(m.id) ?? [];
+    const totalFees = emps.reduce((sum, e) => sum + calculateFees(e.category as EmployeeCategory, duration).totalFee, 0);
+    const createdDate = m.createdAt ? new Date(m.createdAt).toISOString().split("T")[0] : "";
+
+    const base = [
+      m.id, m.orderNumber ?? "", m.title,
+      STATUS_FR[m.status] ?? m.status,
+      dept, creator,
+      m.startDate, m.endDate, duration, m.destination,
+      m.requiresVehicle ? "Oui" : "Non",
+      m.vehicleCount ?? 0,
+      m.vehicleDetails ?? "",
+      m.requiresFuel ? "Oui" : "Non",
+      totalFees,
+    ];
+
+    if (emps.length === 0) {
+      rows.push([...base, "", "", "", "", "", "", "", "", createdDate].map(esc).join(","));
+    } else {
+      for (const emp of emps) {
+        const fees = calculateFees(emp.category as EmployeeCategory, duration);
+        rows.push([
+          ...base,
+          emp.matricule,
+          [emp.firstName, emp.lastName].filter(Boolean).join(" "),
+          emp.position,
+          CATEGORY_FR[emp.category] ?? emp.category,
+          fees.dailyRate, fees.totalFee, fees.paidAmount, fees.remainingAmount,
+          createdDate,
+        ].map(esc).join(","));
+      }
+    }
+  }
+
+  const csv = "\uFEFF" + rows.join("\r\n");
+  const filename = `missions-somelec-${new Date().toISOString().split("T")[0]}.csv`;
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+  res.send(csv);
 });
 
 router.get("/missions/:id", requireAuth, async (req, res): Promise<void> => {
