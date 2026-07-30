@@ -770,6 +770,63 @@ export const ValidateMissionResponse = zod.object({
 });
 
 /**
+ * @summary Admin — force mission to next status
+ */
+export const ForceAdvanceMissionParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ForceAdvanceMissionResponse = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  needsExpression: zod.string(),
+  actionPlan: zod.string(),
+  startDate: zod.string(),
+  endDate: zod.string(),
+  destination: zod.string(),
+  requiresFuel: zod.boolean(),
+  requiresVehicle: zod.boolean(),
+  vehicleCount: zod.number(),
+  vehicleDetails: zod.string().nullish(),
+  status: zod.enum([
+    "draft",
+    "pending_director",
+    "pending_central_director",
+    "pending_technical_control",
+    "pending_dga",
+    "pending_dmg",
+    "en_vigueur",
+    "pending_cad_payment",
+    "pending_financial_control",
+    "approved",
+    "rejected",
+  ]),
+  currentValidationRole: zod.string().nullish(),
+  createdByUserId: zod.number(),
+  createdByName: zod.string(),
+  departmentId: zod.number().nullish(),
+  departmentName: zod.string().nullish(),
+  orderNumber: zod.string().nullish(),
+  orderGeneratedAt: zod.string().nullish(),
+  totalFees: zod.number().nullish(),
+  paidAmount: zod.number().nullish(),
+  remainingAmount: zod.number().nullish(),
+  durationDays: zod.number(),
+  employeeCount: zod.number(),
+  employees: zod.array(
+    zod.object({
+      employeeId: zod.number(),
+      fullName: zod.string(),
+      matricule: zod.string().nullish(),
+      position: zod.string(),
+      category: zod.string(),
+    }),
+  ),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
  * @summary DMG assigns vehicles to a mission
  */
 export const AssignVehiclesParams = zod.object({

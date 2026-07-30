@@ -2467,6 +2467,90 @@ export const useValidateMission = <
 };
 
 /**
+ * @summary Admin — force mission to next status
+ */
+export const getForceAdvanceMissionUrl = (id: number) => {
+  return `/api/missions/${id}/force-advance`;
+};
+
+export const forceAdvanceMission = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Mission> => {
+  return customFetch<Mission>(getForceAdvanceMissionUrl(id), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getForceAdvanceMissionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forceAdvanceMission>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof forceAdvanceMission>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["forceAdvanceMission"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof forceAdvanceMission>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return forceAdvanceMission(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ForceAdvanceMissionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof forceAdvanceMission>>
+>;
+
+export type ForceAdvanceMissionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Admin — force mission to next status
+ */
+export const useForceAdvanceMission = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof forceAdvanceMission>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof forceAdvanceMission>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getForceAdvanceMissionMutationOptions(options));
+};
+
+/**
  * @summary DMG assigns vehicles to a mission
  */
 export const getAssignVehiclesUrl = (id: number) => {

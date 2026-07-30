@@ -12,13 +12,14 @@ import {
   useRemoveMissionEmployee,
   useListEmployees,
   useDeleteMission,
+  useForceAdvanceMission,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
   ArrowLeft, Printer, CheckCircle, XCircle, CarFront, FileText, 
-  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search, AlertTriangle, Pencil
+  Map, Calendar, Settings, Fuel, CreditCard, Receipt, UserPlus, Trash2, Search, AlertTriangle, Pencil, ChevronsRight
 } from "lucide-react";
 import { useAuth } from "@/hooks/use-auth";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +68,7 @@ export default function MissionDetail() {
   const [isAssignVehicleDialogOpen, setIsAssignVehicleDialogOpen] = useState(false);
   const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isForceAdvanceDialogOpen, setIsForceAdvanceDialogOpen] = useState(false);
   const [employeeSearch, setEmployeeSearch] = useState("");
 
   const { data: mission, isLoading: isMissionLoading } = useGetMission(id, { 
@@ -163,6 +165,20 @@ export default function MissionDetail() {
       onSuccess: () => {
         toast({ title: "Mission supprimée." });
         setLocation("/missions");
+      },
+      onError: (err: unknown) => {
+        const msg = (err as { data?: { error?: string } })?.data?.error ?? "Erreur";
+        toast({ title: "Erreur", description: msg, variant: "destructive" });
+      },
+    },
+  });
+
+  const forceAdvanceMutation = useForceAdvanceMission({
+    mutation: {
+      onSuccess: () => {
+        toast({ title: "Mission avancée au statut suivant." });
+        queryClient.invalidateQueries({ queryKey: getGetMissionQueryKey(id) });
+        setIsForceAdvanceDialogOpen(false);
       },
       onError: (err: unknown) => {
         const msg = (err as { data?: { error?: string } })?.data?.error ?? "Erreur";
@@ -278,6 +294,38 @@ export default function MissionDetail() {
                 <Pencil className="w-4 h-4 mr-2" /> Modifier
               </Button>
             </Link>
+          )}
+
+          {/* Admin — Force advance mission */}
+          {role === "admin" && !["approved", "rejected"].includes(mission.status) && (
+            <Dialog open={isForceAdvanceDialogOpen} onOpenChange={setIsForceAdvanceDialogOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="border-amber-400 text-amber-700 hover:bg-amber-50">
+                  <ChevronsRight className="w-4 h-4 mr-2" /> Passer au statut suivant
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-amber-700">
+                    <ChevronsRight className="w-5 h-5" /> Avancer la mission
+                  </DialogTitle>
+                  <DialogDescription>
+                    Cette action va forcer la mission <strong>#{mission.id}</strong> au statut suivant sans validation normale.
+                    Le statut actuel est : <strong>{MISSION_STATUS_LABELS[mission.status] ?? mission.status}</strong>.
+                  </DialogDescription>
+                </DialogHeader>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsForceAdvanceDialogOpen(false)}>Annuler</Button>
+                  <Button
+                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                    onClick={() => forceAdvanceMutation.mutate({ id })}
+                    disabled={forceAdvanceMutation.isPending}
+                  >
+                    {forceAdvanceMutation.isPending ? "En cours..." : "Confirmer l'avancement"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           )}
 
           {/* Admin — Delete mission */}

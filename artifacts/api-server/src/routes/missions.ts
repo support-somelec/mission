@@ -370,7 +370,16 @@ router.post("/missions", requireAuth, async (req, res): Promise<void> => {
     }
   }
 
-  const initialStatus = getInitialStatus(userRole);
+  let initialStatus = getInitialStatus(userRole);
+
+  // Si le créateur est directeur d'une direction simple (sans parent direction centrale),
+  // on saute l'étape pending_central_director.
+  if (userRole === "director" && initialStatus === "pending_central_director") {
+    const hasCentral = await hasCentralDirectionParent(userDeptId ?? null);
+    if (!hasCentral) {
+      initialStatus = "pending_technical_control";
+    }
+  }
 
   const [mission] = await db
     .insert(missionsTable)
@@ -663,6 +672,73 @@ router.delete("/missions/:id", requireAuth, async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
+/**
+ * Vérifie si un département a un parent de type "central_direction".
+ * Utilisé pour décider si on passe par pending_central_director ou pas.
+ */
+async function hasCentralDirectionParent(departmentId: number | null | undefined): Promise<boolean> {
+  if (!departmentId) return false;
+  const [dept] = await db
+    .select({ parentId: departmentsTable.parentId })
+    .from(departmentsTable)
+    .where(eq(departmentsTable.id, departmentId));
+  if (!dept?.parentId) return false;
+  const [parent] = await db
+    .select({ type: departmentsTable.type })
+    .from(departmentsTable)
+    .where(eq(departmentsTable.id, dept.parentId));
+  return parent?.type === "central_direction";
+}
+
+router.post("/missions/:id/force-advance", requireAuth, requireAdmin, async (req, res): Promise<void> => {
+  const params = GetMissionParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+
+  const [mission] = await db.select().from(missionsTable).where(eq(missionsTable.id, params.data.id));
+  if (!mission) {
+    res.status(404).json({ error: "Mission non trouvée" });
+    return;
+  }
+
+  const terminal: MissionStatus[] = ["approved", "rejected"];
+  if (terminal.includes(mission.status as MissionStatus)) {
+    res.status(400).json({ error: "Cette mission est déjà dans un état terminal." });
+    return;
+  }
+
+  const fromStatus = mission.status;
+  const toStatus = getNextStatus(mission.status as MissionStatus);
+
+  await db.insert(missionValidationsTable).values({
+    missionId: mission.id,
+    validatorUserId: req.userId!,
+    validatorRole: "admin" as UserRole,
+    action: "approve",
+    comment: "Avancement forcé par l'administrateur",
+    fromStatus,
+    toStatus,
+  });
+
+  await db.update(missionsTable)
+    .set({
+      status: toStatus,
+      currentValidationRole: toStatus !== "approved" && toStatus !== "rejected"
+        ? toStatus.replace("pending_", "")
+        : null,
+    })
+    .where(eq(missionsTable.id, mission.id));
+
+  const detail = await getMissionWithDetails(mission.id, req.userId!, "admin", req.userDepartmentId);
+  if (!detail || detail === "forbidden") {
+    res.status(500).json({ error: "Erreur lors de la récupération de la mission" });
+    return;
+  }
+  res.json(detail);
+});
+
 router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<void> => {
   const params = ValidateMissionParams.safeParse(req.params);
   if (!params.success) {
@@ -689,9 +765,22 @@ router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<voi
   }
 
   const fromStatus = mission.status;
-  const toStatus: MissionStatus = parsed.data.action === "approve"
+  let toStatus: MissionStatus = parsed.data.action === "approve"
     ? getNextStatus(mission.status as MissionStatus)
     : "rejected";
+
+  // Si le directeur approuve et que le département de la mission n'a pas de
+  // direction centrale parente, on saute l'étape pending_central_director.
+  if (
+    parsed.data.action === "approve" &&
+    fromStatus === "pending_director" &&
+    toStatus === "pending_central_director"
+  ) {
+    const hasCentral = await hasCentralDirectionParent(mission.departmentId);
+    if (!hasCentral) {
+      toStatus = "pending_technical_control";
+    }
+  }
 
   await db.insert(missionValidationsTable).values({
     missionId: mission.id,

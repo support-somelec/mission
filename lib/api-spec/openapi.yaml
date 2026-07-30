@@ -652,6 +652,25 @@ paths:
               schema:
                 $ref: "#/components/schemas/Mission"
 
+  /missions/{id}/force-advance:
+    post:
+      operationId: forceAdvanceMission
+      tags: [validations]
+      summary: Admin — force mission to next status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Mission advanced to next status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Mission"
+
   /missions/{id}/assign-vehicles:
     post:
       operationId: assignVehicles
