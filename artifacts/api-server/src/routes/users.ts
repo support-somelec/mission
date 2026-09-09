@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
-import { eq, ilike, sql, and, inArray } from "drizzle-orm";
-import { db, usersTable, departmentsTable } from "@workspace/db";
+import { eq, ilike, sql, and, inArray, or } from "drizzle-orm";
+import { db, usersTable, departmentsTable, missionsTable, missionEmployeesTable } from "@workspace/db";
 import {
   CreateUserBody,
   UpdateUserBody,
@@ -35,7 +35,7 @@ router.get("/users", requireAuth, requireAdmin, async (req, res): Promise<void> 
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { page = 1, limit = 20, search, departmentId, role } = parsed.data;
+  const { page = 1, limit = 20, search, departmentId, role, missionId } = parsed.data;
   const offset = (page - 1) * limit;
 
   const conditions = [];
@@ -48,7 +48,31 @@ router.get("/users", requireAuth, requireAdmin, async (req, res): Promise<void> 
     conditions.push(eq(usersTable.departmentId, departmentId));
   }
   if (role) {
-    conditions.push(eq(usersTable.role, role as "admin" | "employee" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control"));
+    conditions.push(eq(usersTable.role, role as typeof usersTable.$inferSelect.role));
+  }
+  if (missionId) {
+    const [mission] = await db
+      .select({ createdByUserId: missionsTable.createdByUserId })
+      .from(missionsTable)
+      .where(eq(missionsTable.id, missionId));
+    const assignments = await db
+      .select({ employeeId: missionEmployeesTable.employeeId })
+      .from(missionEmployeesTable)
+      .where(eq(missionEmployeesTable.missionId, missionId));
+    const employeeIds = assignments.map((assignment) => assignment.employeeId);
+
+    if (!mission && employeeIds.length === 0) {
+      conditions.push(sql`false`);
+    } else if (mission && employeeIds.length > 0) {
+      conditions.push(or(
+        eq(usersTable.id, mission.createdByUserId),
+        inArray(usersTable.employeeId, employeeIds),
+      )!);
+    } else if (mission) {
+      conditions.push(eq(usersTable.id, mission.createdByUserId));
+    } else {
+      conditions.push(inArray(usersTable.employeeId, employeeIds));
+    }
   }
 
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;

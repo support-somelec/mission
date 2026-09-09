@@ -13,6 +13,7 @@ export type MissionStatus =
 
 export type UserRole =
   | "admin"
+  | "viewer"
   | "employee"
   | "cadre"
   | "director"

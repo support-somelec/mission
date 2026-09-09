@@ -394,6 +394,11 @@ paths:
           in: query
           schema:
             type: ["string", "null"]
+        - name: missionId
+          in: query
+          description: Filter users linked to a mission as creator or assigned employee
+          schema:
+            type: ["integer", "null"]
       responses:
         "200":
           description: List of users
@@ -1049,6 +1054,7 @@ components:
           type: string
           enum:
             - admin
+            - viewer
             - employee
             - cadre
             - director

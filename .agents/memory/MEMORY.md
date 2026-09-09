@@ -1,0 +1,1 @@
+- [Régénération des schémas API](api-schema-codegen.md) — après codegen, retirer l’export generated/types en double dans le barrel Zod avant le typecheck.

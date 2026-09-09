@@ -87,6 +87,7 @@ export default function AdminUsers() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [missionIdFilter, setMissionIdFilter] = useState("");
   const limit = 10;
 
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -100,6 +101,7 @@ export default function AdminUsers() {
     limit,
     search: search || undefined,
     role: roleFilter !== "all" ? roleFilter : undefined,
+    missionId: missionIdFilter ? Number(missionIdFilter) : undefined,
   });
 
   const { data: deptsData } = useListDepartments({ limit: 100 });
@@ -191,7 +193,7 @@ export default function AdminUsers() {
       username: form.username,
       fullName: form.fullName,
       email: form.email || undefined,
-      role: form.role as "admin" | "employee" | "cadre" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control",
+      role: form.role as "admin" | "viewer" | "employee" | "cadre" | "director" | "central_director" | "technical_control" | "dga" | "dmg" | "cad_edition" | "cad_payment" | "financial_control",
       departmentId: deptId ?? undefined,
       password: form.password || undefined,
     };
@@ -267,7 +269,7 @@ export default function AdminUsers() {
         <CardHeader className="pb-3">
           <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
             <CardTitle className="text-lg">Comptes d'accès</CardTitle>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex gap-2 w-full sm:w-auto flex-wrap justify-end">
               <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -276,6 +278,18 @@ export default function AdminUsers() {
                   className="pl-8"
                   value={search}
                   onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                />
+              </div>
+              <div className="relative w-full sm:w-44">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="number"
+                  min="1"
+                  inputMode="numeric"
+                  placeholder="ID mission"
+                  className="pl-8"
+                  value={missionIdFilter}
+                  onChange={(e) => { setMissionIdFilter(e.target.value); setPage(1); }}
                 />
               </div>
               <Select value={roleFilter} onValueChange={(v) => { setRoleFilter(v); setPage(1); }}>

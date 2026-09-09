@@ -39,6 +39,7 @@ export type UserRole = (typeof UserRole)[keyof typeof UserRole];
 
 export const UserRole = {
   admin: "admin",
+  viewer: "viewer",
   employee: "employee",
   cadre: "cadre",
   director: "director",
@@ -553,6 +554,11 @@ export type ListUsersParams = {
    * @nullable
    */
   role?: string | null;
+  /**
+   * Filter users linked to a mission as creator or assigned employee
+   * @nullable
+   */
+  missionId?: number | null;
 };
 
 export type ListMissionsParams = {

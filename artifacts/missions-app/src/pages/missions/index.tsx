@@ -19,8 +19,10 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { StatusBadge } from "@/components/status-badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function MissionsList() {
+  const { user } = useAuth();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<string>("all");
@@ -48,11 +50,13 @@ export default function MissionsList() {
           <h1 className="text-2xl font-bold tracking-tight">Missions</h1>
           <p className="text-muted-foreground">Gérez et suivez toutes les missions.</p>
         </div>
-        <Link href="/missions/new">
-          <Button>
-            <Plus className="w-4 h-4 mr-2" /> Nouvelle Mission
-          </Button>
-        </Link>
+        {user?.role !== "viewer" && (
+          <Link href="/missions/new">
+            <Button>
+              <Plus className="w-4 h-4 mr-2" /> Nouvelle Mission
+            </Button>
+          </Link>
+        )}
       </div>
 
       <Card>

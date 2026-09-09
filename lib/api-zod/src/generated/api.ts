@@ -30,6 +30,7 @@ export const LoginResponse = zod.object({
     email: zod.string().nullish(),
     role: zod.enum([
       "admin",
+      "viewer",
       "employee",
       "cadre",
       "director",
@@ -91,6 +92,7 @@ export const GetCurrentUserResponse = zod.object({
   email: zod.string().nullish(),
   role: zod.enum([
     "admin",
+    "viewer",
     "employee",
     "cadre",
     "director",
@@ -339,6 +341,12 @@ export const ListUsersQueryParams = zod.object({
   search: zod.coerce.string().nullish(),
   departmentId: zod.coerce.number().nullish(),
   role: zod.coerce.string().nullish(),
+  missionId: zod.coerce
+    .number()
+    .nullish()
+    .describe(
+      "Filter users linked to a mission as creator or assigned employee",
+    ),
 });
 
 export const ListUsersResponse = zod.object({
@@ -350,6 +358,7 @@ export const ListUsersResponse = zod.object({
       email: zod.string().nullish(),
       role: zod.enum([
         "admin",
+        "viewer",
         "employee",
         "cadre",
         "director",
@@ -402,6 +411,7 @@ export const GetUserResponse = zod.object({
   email: zod.string().nullish(),
   role: zod.enum([
     "admin",
+    "viewer",
     "employee",
     "cadre",
     "director",
@@ -445,6 +455,7 @@ export const UpdateUserResponse = zod.object({
   email: zod.string().nullish(),
   role: zod.enum([
     "admin",
+    "viewer",
     "employee",
     "cadre",
     "director",

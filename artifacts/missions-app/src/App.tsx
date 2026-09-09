@@ -20,7 +20,7 @@ import AdminUsers from "@/pages/admin/users";
 import AdminImport from "@/pages/admin/import";
 import Reporting from "@/pages/reporting";
 
-function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: any) {
+function ProtectedRoute({ component: Component, adminOnly = false, blockViewer = false, ...rest }: any) {
   const { user, isLoading } = useAuth();
 
   if (isLoading) {
@@ -37,6 +37,10 @@ function ProtectedRoute({ component: Component, adminOnly = false, ...rest }: an
 
   if (adminOnly && user.role !== "admin") {
     return <Redirect to="/dashboard" />;
+  }
+
+  if (blockViewer && user.role === "viewer") {
+    return <Redirect to="/missions" />;
   }
 
   return (
@@ -64,11 +68,11 @@ function AppRouter() {
       </Route>
 
       <Route path="/missions/new">
-        {() => <ProtectedRoute component={MissionNew} />}
+        {() => <ProtectedRoute component={MissionNew} blockViewer={true} />}
       </Route>
 
       <Route path="/missions/:id/edit">
-        {() => <ProtectedRoute component={MissionEdit} />}
+        {() => <ProtectedRoute component={MissionEdit} blockViewer={true} />}
       </Route>
 
       <Route path="/missions/:id/order">

@@ -1,4 +1,4 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type RequestHandler } from "express";
 import { eq, ilike, sql, and, inArray } from "drizzle-orm";
 import { db, missionsTable, missionEmployeesTable, missionValidationsTable, usersTable, departmentsTable, employeesTable } from "@workspace/db";
 import {
@@ -33,8 +33,17 @@ import { calculateFees, calcDurationDays, type EmployeeCategory } from "../lib/f
 
 const router: IRouter = Router();
 
+const requireMissionWriteAccess: RequestHandler = (req, res, next) => {
+  if (req.userRole === "viewer") {
+    res.status(403).json({ error: "Ce profil est limité à la consultation des missions." });
+    return;
+  }
+  next();
+};
+
 // Transversal roles see ALL missions across departments
 const TRANSVERSAL_ROLES = [
+  "viewer",
   "technical_control",
   "dga",
   "dmg",
@@ -333,7 +342,7 @@ async function checkEmployeeOverlap(
   return { conflicting };
 }
 
-router.post("/missions", requireAuth, async (req, res): Promise<void> => {
+router.post("/missions", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const parsed = CreateMissionBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -568,7 +577,7 @@ router.get("/missions/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(detail);
 });
 
-router.patch("/missions/:id", requireAuth, async (req, res): Promise<void> => {
+router.patch("/missions/:id", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = UpdateMissionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -647,7 +656,7 @@ router.patch("/missions/:id", requireAuth, async (req, res): Promise<void> => {
   res.json(detail);
 });
 
-router.delete("/missions/:id", requireAuth, async (req, res): Promise<void> => {
+router.delete("/missions/:id", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = DeleteMissionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -739,7 +748,7 @@ router.post("/missions/:id/force-advance", requireAuth, requireAdmin, async (req
   res.json(detail);
 });
 
-router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<void> => {
+router.post("/missions/:id/validate", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = ValidateMissionParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -809,7 +818,7 @@ router.post("/missions/:id/validate", requireAuth, async (req, res): Promise<voi
   res.json(detail);
 });
 
-router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Promise<void> => {
+router.post("/missions/:id/assign-vehicles", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = AssignVehiclesParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -869,7 +878,7 @@ router.post("/missions/:id/assign-vehicles", requireAuth, async (req, res): Prom
   res.json(detail);
 });
 
-router.post("/missions/:id/generate-order", requireAuth, async (req, res): Promise<void> => {
+router.post("/missions/:id/generate-order", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = GenerateMissionOrderParams.safeParse(req.params);
   if (!params.success) {
     res.status(400).json({ error: params.error.message });
@@ -1117,7 +1126,7 @@ router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<voi
   res.json(result);
 });
 
-router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<void> => {
+router.post("/missions/:id/employees", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = AddMissionEmployeeParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 
@@ -1176,7 +1185,7 @@ router.post("/missions/:id/employees", requireAuth, async (req, res): Promise<vo
   res.json(result);
 });
 
-router.delete("/missions/:id/employees/:employeeId", requireAuth, async (req, res): Promise<void> => {
+router.delete("/missions/:id/employees/:employeeId", requireAuth, requireMissionWriteAccess, async (req, res): Promise<void> => {
   const params = RemoveMissionEmployeeParams.safeParse(req.params);
   if (!params.success) { res.status(400).json({ error: params.error.message }); return; }
 

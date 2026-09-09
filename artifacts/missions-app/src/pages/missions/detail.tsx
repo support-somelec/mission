@@ -234,10 +234,10 @@ export default function MissionDetail() {
 
   const canAssignVehicles = isCurrentValidator && isDMG;
   const canGenerateOrder = isCurrentValidator && isCADEdition && mission.status === "en_vigueur" && !mission.orderNumber;
-  const canPrintOrder = !!mission.orderNumber && (isCADEdition || role === "admin");
+  const canPrintOrder = !!mission.orderNumber && (isCADEdition || role === "admin" || role === "viewer");
   const canViewReceipt = !!mission.orderNumber &&
     ["pending_financial_control", "approved"].includes(mission.status) &&
-    ["admin", "cad_payment", "financial_control"].includes(role);
+    ["admin", "viewer", "cad_payment", "financial_control"].includes(role);
 
   // CAD Paiement validates via normal validate route
   const canValidateNormally = isCurrentValidator && !canAssignVehicles && !canGenerateOrder;

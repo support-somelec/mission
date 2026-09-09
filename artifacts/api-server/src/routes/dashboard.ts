@@ -11,6 +11,7 @@ const router: IRouter = Router();
 
 // Rôles qui voient TOUTES les missions sans restriction de département
 const TRANSVERSAL_ROLES = [
+  "viewer",
   "technical_control",
   "dga",
   "dmg",

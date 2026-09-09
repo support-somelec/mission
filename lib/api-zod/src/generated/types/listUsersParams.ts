@@ -21,4 +21,9 @@ export type ListUsersParams = {
    * @nullable
    */
   role?: string | null;
+  /**
+   * Filter users linked to a mission as creator or assigned employee
+   * @nullable
+   */
+  missionId?: number | null;
 };
