@@ -197,7 +197,7 @@ export default function MissionOrderPrint() {
               Directeur Général Adjoint
             </p>
             <div className="border-t border-gray-400 pt-2">
-              <p className="text-xs text-gray-500 font-medium">Ahmed Ramadan Sylla</p>
+              <p className="text-xs text-gray-500 font-medium">Ahmed Ramadane Sylla</p>
               <p className="text-xs text-gray-400">Cachet &amp; Signature</p>
             </div>
           </div>
