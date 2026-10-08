@@ -7,6 +7,61 @@
  */
 import * as zod from "zod";
 
+export const ListRemainingPaymentEligibleResponseItem = zod.object({
+  id: zod.number(),
+  missionNumber: zod.string(),
+  title: zod.string(),
+  startDate: zod.string(),
+  month: zod.number(),
+  year: zod.number(),
+  totalRemaining: zod.number(),
+  eligible: zod.boolean(),
+  ineligibilityReason: zod.string().nullable(),
+  rows: zod.array(
+    zod.object({
+      missionId: zod.number(),
+      missionNumber: zod.string(),
+      employeeId: zod.number(),
+      matricule: zod.string().nullable(),
+      nni: zod.string().nullable(),
+      firstName: zod.string(),
+      lastName: zod.string(),
+      amount: zod.number(),
+      month: zod.number(),
+      year: zod.number(),
+    }),
+  ),
+});
+export const ListRemainingPaymentEligibleResponse = zod.array(
+  ListRemainingPaymentEligibleResponseItem,
+);
+
+export const ListRemainingPaymentExportsResponseItem = zod.object({
+  id: zod.number(),
+  createdAt: zod.string(),
+  createdByName: zod.string(),
+  missionCount: zod.number(),
+  employeeCount: zod.number(),
+  totalAmount: zod.number(),
+});
+export const ListRemainingPaymentExportsResponse = zod.array(
+  ListRemainingPaymentExportsResponseItem,
+);
+
+export const createRemainingPaymentExportBodyMissionIdsMax = 1000;
+
+export const CreateRemainingPaymentExportBody = zod.object({
+  missionIds: zod
+    .array(zod.number().min(1))
+    .min(1)
+    .max(createRemainingPaymentExportBodyMissionIdsMax),
+  requestId: zod.string().uuid(),
+});
+
+export const DownloadRemainingPaymentExportParams = zod.object({
+  id: zod.coerce.number(),
+});
+
 /**
  * @summary Health check
  */
@@ -547,6 +602,7 @@ export const ListMissionsResponse = zod.object({
       totalFees: zod.number().nullish(),
       paidAmount: zod.number().nullish(),
       remainingAmount: zod.number().nullish(),
+      fullyPaidAt: zod.string().nullish(),
       durationDays: zod.number(),
       employeeCount: zod.number(),
       employees: zod.array(
@@ -626,6 +682,7 @@ export const GetMissionResponse = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(
@@ -696,6 +753,7 @@ export const UpdateMissionResponse = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(
@@ -765,6 +823,7 @@ export const ValidateMissionResponse = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(
@@ -822,6 +881,7 @@ export const ForceAdvanceMissionResponse = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(
@@ -884,6 +944,7 @@ export const AssignVehiclesResponse = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(
@@ -1193,6 +1254,7 @@ export const GetPendingValidationsResponse = zod.object({
       totalFees: zod.number().nullish(),
       paidAmount: zod.number().nullish(),
       remainingAmount: zod.number().nullish(),
+      fullyPaidAt: zod.string().nullish(),
       durationDays: zod.number(),
       employeeCount: zod.number(),
       employees: zod.array(
@@ -1252,6 +1314,7 @@ export const GetRecentMissionsResponseItem = zod.object({
   totalFees: zod.number().nullish(),
   paidAmount: zod.number().nullish(),
   remainingAmount: zod.number().nullish(),
+  fullyPaidAt: zod.string().nullish(),
   durationDays: zod.number(),
   employeeCount: zod.number(),
   employees: zod.array(

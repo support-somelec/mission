@@ -26,6 +26,68 @@ tags:
     description: Dashboard and statistics
 
 paths:
+  /admin/remaining-payments/eligible:
+    get:
+      operationId: listRemainingPaymentEligible
+      tags: [missions]
+      responses:
+        "200":
+          description: Missions approuvées dont le solde reste à payer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RemainingPaymentMission"
+  /admin/remaining-payments/exports:
+    get:
+      operationId: listRemainingPaymentExports
+      tags: [missions]
+      responses:
+        "200":
+          description: Historique des extractions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/RemainingPaymentExport"
+    post:
+      operationId: createRemainingPaymentExport
+      tags: [missions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemainingPaymentSelection"
+      responses:
+        "201":
+          description: Extraction enregistrée et missions soldées
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemainingPaymentExport"
+        "409":
+          description: Une mission est déjà payée ou n'est plus éligible
+  /admin/remaining-payments/exports/{id}/download:
+    get:
+      operationId: downloadRemainingPaymentExport
+      tags: [missions]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Fichier Excel de l'extraction sans nouveau paiement
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
   /healthz:
     get:
       operationId: healthCheck
@@ -967,6 +1029,62 @@ paths:
 
 components:
   schemas:
+    RemainingPaymentSelection:
+      type: object
+      required: [missionIds, requestId]
+      properties:
+        missionIds:
+          type: array
+          minItems: 1
+          maxItems: 1000
+          uniqueItems: true
+          items:
+            type: integer
+            minimum: 1
+        requestId:
+          type: string
+          format: uuid
+    RemainingPaymentRow:
+      type: object
+      required: [missionId, missionNumber, employeeId, matricule, nni, firstName, lastName, amount, month, year]
+      properties:
+        missionId: { type: integer }
+        missionNumber: { type: string }
+        employeeId: { type: integer }
+        matricule: { type: ["string", "null"] }
+        nni: { type: ["string", "null"] }
+        firstName: { type: string }
+        lastName: { type: string }
+        amount: { type: number }
+        month: { type: integer }
+        year: { type: integer }
+    RemainingPaymentMission:
+      type: object
+      required: [id, missionNumber, title, startDate, month, year, totalRemaining, rows, eligible, ineligibilityReason]
+      properties:
+        id: { type: integer }
+        missionNumber: { type: string }
+        title: { type: string }
+        startDate: { type: string }
+        month: { type: integer }
+        year: { type: integer }
+        totalRemaining: { type: number }
+        eligible: { type: boolean }
+        ineligibilityReason: { type: ["string", "null"] }
+        rows:
+          type: array
+          items:
+            $ref: "#/components/schemas/RemainingPaymentRow"
+    RemainingPaymentExport:
+      type: object
+      required: [id, createdAt, createdByName, missionCount, employeeCount, totalAmount]
+      properties:
+        id: { type: integer }
+        createdAt: { type: string }
+        createdByName: { type: string }
+        missionCount: { type: integer }
+        employeeCount: { type: integer }
+        totalAmount: { type: number }
     HealthStatus:
       type: object
       properties:
@@ -1395,6 +1513,8 @@ components:
           type: ["number", "null"]
         remainingAmount:
           type: ["number", "null"]
+        fullyPaidAt:
+          type: ["string", "null"]
         durationDays:
           type: integer
         employeeCount:

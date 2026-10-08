@@ -1,6 +1,6 @@
 import { Router, type IRouter, type RequestHandler } from "express";
 import { eq, ilike, sql, and, inArray } from "drizzle-orm";
-import { db, missionsTable, missionEmployeesTable, missionValidationsTable, usersTable, departmentsTable, employeesTable } from "@workspace/db";
+import { db, missionsTable, missionEmployeesTable, missionValidationsTable, usersTable, departmentsTable, employeesTable, remainingPaymentMissionsTable, remainingPaymentExportsTable } from "@workspace/db";
 import {
   CreateMissionBody,
   UpdateMissionBody,
@@ -33,13 +33,37 @@ import { calculateFees, calcDurationDays, type EmployeeCategory } from "../lib/f
 
 const router: IRouter = Router();
 
-const requireMissionWriteAccess: RequestHandler = (req, res, next) => {
+const requireMissionWriteAccess: RequestHandler = async (req, res, next) => {
   if (req.userRole === "viewer") {
     res.status(403).json({ error: "Ce profil est limité à la consultation des missions." });
     return;
   }
+  if (req.params.id) {
+    const id = Number(req.params.id);
+    if (Number.isSafeInteger(id)) {
+      const [mission] = await db.select({ status: missionsTable.status, fullyPaidAt: missionsTable.fullyPaidAt })
+        .from(missionsTable).where(eq(missionsTable.id, id));
+      if (mission?.fullyPaidAt) {
+        res.status(409).json({ error: "Cette mission est totalement payée. Aucune nouvelle action métier n'est autorisée." });
+        return;
+      }
+      // Completed approval seals dates, agents and fees before settlement.
+      if (mission?.status === "approved" && !req.path.endsWith("/generate-order")) {
+        res.status(409).json({ error: "Cette mission est totalement validée et ne peut plus être modifiée. Le solde se règle dans Extraction 30 %." });
+        return;
+      }
+    }
+  }
   next();
 };
+
+async function getSettledRows(missionId: number) {
+  const [settlement] = await db.select({ rows: remainingPaymentExportsTable.rows })
+    .from(remainingPaymentMissionsTable)
+    .innerJoin(remainingPaymentExportsTable, eq(remainingPaymentExportsTable.id, remainingPaymentMissionsTable.exportId))
+    .where(eq(remainingPaymentMissionsTable.missionId, missionId));
+  return settlement?.rows.filter(row => row.missionId === missionId) ?? [];
+}
 
 // Transversal roles see ALL missions across departments
 const TRANSVERSAL_ROLES = [
@@ -114,8 +138,11 @@ async function getMissionWithDetails(id: number, userId: number, userRole: strin
     const fees = calculateFees(emp.category as EmployeeCategory, durationDays);
     totalFees += fees.totalFee;
   }
-  const paidAmount = Math.round(totalFees * 0.70 * 100) / 100;
-  const remainingAmount = Math.round((totalFees - paidAmount) * 100) / 100;
+  if (mission.fullyPaidAt) {
+    totalFees = (await getSettledRows(mission.id)).reduce((sum, row) => sum + row.totalFee, 0);
+  }
+  const paidAmount = mission.fullyPaidAt ? totalFees : Math.round(totalFees * 0.70 * 100) / 100;
+  const remainingAmount = mission.fullyPaidAt ? 0 : Math.round((totalFees - paidAmount) * 100) / 100;
 
   return {
     ...mission,
@@ -125,7 +152,7 @@ async function getMissionWithDetails(id: number, userId: number, userRole: strin
     employeeCount: employees.length,
     totalFees: totalFees || null,
     paidAmount: paidAmount || null,
-    remainingAmount: remainingAmount || null,
+    remainingAmount: mission.fullyPaidAt ? 0 : remainingAmount || null,
     employees: employees.map(e => ({
       employeeId: e.id,
       fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
@@ -235,6 +262,19 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
   const total = countResult?.count ?? 0;
   const totalPages = Math.ceil(total / limit);
 
+  const settledTotals = new Map<number, number>();
+  const paidIds = missions.filter(m => m.fullyPaidAt).map(m => m.id);
+  if (paidIds.length) {
+    const snapshots = await db.select({ missionId: remainingPaymentMissionsTable.missionId, rows: remainingPaymentExportsTable.rows })
+      .from(remainingPaymentMissionsTable)
+      .innerJoin(remainingPaymentExportsTable, eq(remainingPaymentExportsTable.id, remainingPaymentMissionsTable.exportId))
+      .where(inArray(remainingPaymentMissionsTable.missionId, paidIds));
+    for (const snapshot of snapshots) {
+      settledTotals.set(snapshot.missionId, snapshot.rows.filter(row => row.missionId === snapshot.missionId)
+        .reduce((sum, row) => sum + row.totalFee, 0));
+    }
+  }
+
   res.json({
     data: missions.map(m => {
       const emps = empsByMission.get(m.id) ?? [];
@@ -243,8 +283,11 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
       for (const emp of emps) {
         totalFees += calculateFees(emp.category as EmployeeCategory, durationDays).totalFee;
       }
-      const paidAmount = Math.round(totalFees * 0.70 * 100) / 100;
-      const remainingAmount = Math.round((totalFees - paidAmount) * 100) / 100;
+      if (m.fullyPaidAt) {
+        totalFees = settledTotals.get(m.id) ?? 0;
+      }
+      const paidAmount = m.fullyPaidAt ? totalFees : Math.round(totalFees * 0.70 * 100) / 100;
+      const remainingAmount = m.fullyPaidAt ? 0 : Math.round((totalFees - paidAmount) * 100) / 100;
       return {
         ...m,
         createdByName: creatorMap.get(m.createdByUserId) ?? "Inconnu",
@@ -253,7 +296,7 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
         employeeCount: emps.length,
         totalFees: totalFees || null,
         paidAmount: paidAmount || null,
-        remainingAmount: remainingAmount || null,
+        remainingAmount: m.fullyPaidAt ? 0 : remainingAmount || null,
         employees: emps.map(e => ({
           employeeId: e.id,
           fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
@@ -1109,8 +1152,10 @@ router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<voi
 
   const durationDays = calcDurationDays(mission.startDate, mission.endDate);
 
+  const settledRows = mission.fullyPaidAt ? await getSettledRows(mission.id) : [];
   const result = employees.map(e => {
     const fees = calculateFees(e.category as EmployeeCategory, durationDays);
+    const settled = settledRows.find(row => row.employeeId === e.id);
     return {
       employeeId: e.id,
       fullName: [e.firstName, e.lastName].filter(Boolean).join(" "),
@@ -1119,6 +1164,7 @@ router.get("/missions/:id/employees", requireAuth, async (req, res): Promise<voi
       position: e.position,
       category: e.category,
       ...fees,
+      ...(settled ? { dailyRate: settled.totalFee / durationDays, totalFee: settled.totalFee, paidAmount: settled.totalFee, remainingAmount: 0 } : {}),
       durationDays,
     };
   });

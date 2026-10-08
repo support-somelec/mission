@@ -40,6 +40,8 @@ export interface Mission {
   paidAmount?: number | null;
   /** @nullable */
   remainingAmount?: number | null;
+  /** @nullable */
+  fullyPaidAt?: string | null;
   durationDays: number;
   employeeCount: number;
   employees: MissionEmployeeSummary[];

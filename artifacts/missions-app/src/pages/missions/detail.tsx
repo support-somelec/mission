@@ -332,7 +332,7 @@ export default function MissionDetail() {
           {role === "admin" && (
             <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
               <DialogTrigger asChild>
-                <Button variant="destructive" size="sm">
+                <Button variant="destructive" size="sm" disabled={!!mission.fullyPaidAt} title={mission.fullyPaidAt ? "Mission totalement payée" : undefined}>
                   <Trash2 className="w-4 h-4 mr-2" /> Supprimer
                 </Button>
               </DialogTrigger>
@@ -669,13 +669,19 @@ export default function MissionDetail() {
                     </div>
                     <Separator />
                     <div className="flex justify-between text-sm text-emerald-600">
-                      <span>CAD Paiement (70%) :</span>
+                      <span>{mission.fullyPaidAt ? "Montant payé (100%) :" : "CAD Paiement (70%) :"}</span>
                       <span className="font-mono">{mission.paidAmount} MRU</span>
                     </div>
                     <div className="flex justify-between text-sm text-amber-600">
-                      <span>Contrôle Financier (30%) :</span>
+                      <span>{mission.fullyPaidAt ? "Solde restant :" : "Contrôle Financier (30%) :"}</span>
                       <span className="font-mono">{mission.remainingAmount} MRU</span>
                     </div>
+                    {mission.fullyPaidAt && (
+                      <div className="flex justify-between text-sm text-emerald-700 font-medium" data-testid="text-fully-paid">
+                        <span>Totalement payée</span>
+                        <span>{formatDate(mission.fullyPaidAt)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               )}

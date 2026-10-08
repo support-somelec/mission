@@ -1,4 +1,4 @@
-import { useState, ReactNode } from "react";
+import { useEffect, useState, ReactNode } from "react";
 import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { useChangePassword } from "@workspace/api-client-react";
@@ -15,11 +15,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
   SidebarFooter,
+  useSidebar,
 } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle, BarChart3, FileUp } from "lucide-react";
+import { LogOut, User as UserIcon, LayoutDashboard, Map, Users, Settings, Building, Building2, KeyRound, AlertTriangle, BarChart3, FileUp, Wallet } from "lucide-react";
 import { ROLE_LABELS } from "@/lib/constants";
 import logoSomelec from "/logo-somelec.png";
 import {
@@ -151,6 +152,15 @@ function ChangePasswordDialog({
   );
 }
 
+function CloseMobileMenuOnNavigation() {
+  const [location] = useLocation();
+  const { setOpenMobile } = useSidebar();
+  useEffect(() => {
+    setOpenMobile(false);
+  }, [location, setOpenMobile]);
+  return null;
+}
+
 export function AppLayout({ children }: { children: ReactNode }) {
   const { user, logout } = useAuth();
   const [location] = useLocation();
@@ -175,10 +185,12 @@ export function AppLayout({ children }: { children: ReactNode }) {
     { name: "Départements", href: "/admin/departments", icon: Building },
     { name: "Gestion Employés", href: "/admin/employees", icon: Building2 },
     { name: "Import Missions", href: "/admin/import", icon: FileUp },
+    { name: "Solde 30 %", href: "/admin/remaining-payments", icon: Wallet },
   ] : [];
 
   return (
     <SidebarProvider>
+      <CloseMobileMenuOnNavigation />
       <div className="flex h-screen w-full bg-gray-50 dark:bg-gray-900 overflow-hidden">
         <Sidebar className="border-r border-gray-200 dark:border-gray-800">
           <SidebarHeader className="border-b border-gray-200 dark:border-gray-800 p-4">

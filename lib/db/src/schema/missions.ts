@@ -35,6 +35,7 @@ export const missionsTable = pgTable("missions", {
   orderNumber: text("order_number"),
   orderGeneratedAt: timestamp("order_generated_at", { withTimezone: true }),
   orderGeneratedByUserId: integer("order_generated_by_user_id"),
+  fullyPaidAt: timestamp("fully_paid_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

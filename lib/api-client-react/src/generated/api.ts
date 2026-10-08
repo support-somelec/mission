@@ -45,6 +45,9 @@ import type {
   MissionOrder,
   PaymentReceipt,
   RegisterBody,
+  RemainingPaymentExport,
+  RemainingPaymentMission,
+  RemainingPaymentSelection,
   ReportingData,
   SuccessResponse,
   UpdateDepartmentBody,
@@ -65,6 +68,321 @@ type AwaitedInput<T> = PromiseLike<T> | T;
 type Awaited<O> = O extends AwaitedInput<infer T> ? T : never;
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+export const getListRemainingPaymentEligibleUrl = () => {
+  return `/api/admin/remaining-payments/eligible`;
+};
+
+export const listRemainingPaymentEligible = async (
+  options?: RequestInit,
+): Promise<RemainingPaymentMission[]> => {
+  return customFetch<RemainingPaymentMission[]>(
+    getListRemainingPaymentEligibleUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListRemainingPaymentEligibleQueryKey = () => {
+  return [`/api/admin/remaining-payments/eligible`] as const;
+};
+
+export const getListRemainingPaymentEligibleQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRemainingPaymentEligible>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentEligible>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRemainingPaymentEligibleQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRemainingPaymentEligible>>
+  > = ({ signal }) =>
+    listRemainingPaymentEligible({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentEligible>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListRemainingPaymentEligibleQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRemainingPaymentEligible>>
+>;
+export type ListRemainingPaymentEligibleQueryError = ErrorType<unknown>;
+
+export function useListRemainingPaymentEligible<
+  TData = Awaited<ReturnType<typeof listRemainingPaymentEligible>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentEligible>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListRemainingPaymentEligibleQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getListRemainingPaymentExportsUrl = () => {
+  return `/api/admin/remaining-payments/exports`;
+};
+
+export const listRemainingPaymentExports = async (
+  options?: RequestInit,
+): Promise<RemainingPaymentExport[]> => {
+  return customFetch<RemainingPaymentExport[]>(
+    getListRemainingPaymentExportsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListRemainingPaymentExportsQueryKey = () => {
+  return [`/api/admin/remaining-payments/exports`] as const;
+};
+
+export const getListRemainingPaymentExportsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listRemainingPaymentExports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentExports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListRemainingPaymentExportsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listRemainingPaymentExports>>
+  > = ({ signal }) =>
+    listRemainingPaymentExports({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentExports>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListRemainingPaymentExportsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listRemainingPaymentExports>>
+>;
+export type ListRemainingPaymentExportsQueryError = ErrorType<unknown>;
+
+export function useListRemainingPaymentExports<
+  TData = Awaited<ReturnType<typeof listRemainingPaymentExports>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listRemainingPaymentExports>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListRemainingPaymentExportsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const getCreateRemainingPaymentExportUrl = () => {
+  return `/api/admin/remaining-payments/exports`;
+};
+
+export const createRemainingPaymentExport = async (
+  remainingPaymentSelection: RemainingPaymentSelection,
+  options?: RequestInit,
+): Promise<RemainingPaymentExport> => {
+  return customFetch<RemainingPaymentExport>(
+    getCreateRemainingPaymentExportUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(remainingPaymentSelection),
+    },
+  );
+};
+
+export const getCreateRemainingPaymentExportMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRemainingPaymentExport>>,
+    TError,
+    { data: BodyType<RemainingPaymentSelection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createRemainingPaymentExport>>,
+  TError,
+  { data: BodyType<RemainingPaymentSelection> },
+  TContext
+> => {
+  const mutationKey = ["createRemainingPaymentExport"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createRemainingPaymentExport>>,
+    { data: BodyType<RemainingPaymentSelection> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createRemainingPaymentExport(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateRemainingPaymentExportMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createRemainingPaymentExport>>
+>;
+export type CreateRemainingPaymentExportMutationBody =
+  BodyType<RemainingPaymentSelection>;
+export type CreateRemainingPaymentExportMutationError = ErrorType<void>;
+
+export const useCreateRemainingPaymentExport = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createRemainingPaymentExport>>,
+    TError,
+    { data: BodyType<RemainingPaymentSelection> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createRemainingPaymentExport>>,
+  TError,
+  { data: BodyType<RemainingPaymentSelection> },
+  TContext
+> => {
+  return useMutation(getCreateRemainingPaymentExportMutationOptions(options));
+};
+
+export const getDownloadRemainingPaymentExportUrl = (id: number) => {
+  return `/api/admin/remaining-payments/exports/${id}/download`;
+};
+
+export const downloadRemainingPaymentExport = async (
+  id: number,
+  options?: RequestInit,
+): Promise<Blob> => {
+  return customFetch<Blob>(getDownloadRemainingPaymentExportUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getDownloadRemainingPaymentExportQueryKey = (id: number) => {
+  return [`/api/admin/remaining-payments/exports/${id}/download`] as const;
+};
+
+export const getDownloadRemainingPaymentExportQueryOptions = <
+  TData = Awaited<ReturnType<typeof downloadRemainingPaymentExport>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadRemainingPaymentExport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getDownloadRemainingPaymentExportQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof downloadRemainingPaymentExport>>
+  > = ({ signal }) =>
+    downloadRemainingPaymentExport(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof downloadRemainingPaymentExport>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type DownloadRemainingPaymentExportQueryResult = NonNullable<
+  Awaited<ReturnType<typeof downloadRemainingPaymentExport>>
+>;
+export type DownloadRemainingPaymentExportQueryError = ErrorType<unknown>;
+
+export function useDownloadRemainingPaymentExport<
+  TData = Awaited<ReturnType<typeof downloadRemainingPaymentExport>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof downloadRemainingPaymentExport>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getDownloadRemainingPaymentExportQueryOptions(
+    id,
+    options,
+  );
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Health check

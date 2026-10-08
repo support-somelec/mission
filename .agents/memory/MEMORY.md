@@ -1,1 +1,2 @@
 - [Régénération des schémas API](api-schema-codegen.md) — après codegen, retirer l’export generated/types en double dans le barrel Zod avant le typecheck.
+- [Règlement du solde des missions](mission-settlement-rules.md) — extraction administrateur des 30 %, paiement définitif unique et période selon le début de mission.

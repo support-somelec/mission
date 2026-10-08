@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext } from "react";
 import type { User } from "@workspace/api-client-react";
 import { useGetCurrentUser, useLogin, useLogout, getGetCurrentUserQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -16,7 +16,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -29,18 +28,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  useEffect(() => {
-    if (data) {
-      setUser(data);
-    } else if (error) {
-      setUser(null);
-    }
-  }, [data, error]);
+  // Read the authenticated user synchronously from the query. An effect-backed
+  // copy could briefly report null after loading and redirect a valid session.
+  const user = error ? null : data ?? null;
 
   const loginMutation = useLogin({
     mutation: {
       onSuccess: (res) => {
-        setUser(res.user);
+        queryClient.removeQueries({ predicate: query => query.queryKey[0] !== getGetCurrentUserQueryKey()[0] });
         queryClient.setQueryData(getGetCurrentUserQueryKey(), res.user);
         setLocation("/");
       },
@@ -61,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutMutation = useLogout({
     mutation: {
       onSuccess: () => {
-        setUser(null);
+        queryClient.removeQueries({ predicate: query => query.queryKey[0] !== getGetCurrentUserQueryKey()[0] });
         queryClient.setQueryData(getGetCurrentUserQueryKey(), null);
         setLocation("/login");
       }

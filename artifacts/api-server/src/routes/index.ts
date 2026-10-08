@@ -7,6 +7,7 @@ import usersRouter from "./users";
 import missionsRouter from "./missions";
 import dashboardRouter from "./dashboard";
 import importRouter from "./import";
+import remainingPaymentsRouter from "./remaining-payments";
 
 const router: IRouter = Router();
 
@@ -18,5 +19,6 @@ router.use(usersRouter);
 router.use(missionsRouter);
 router.use(dashboardRouter);
 router.use(importRouter);
+router.use(remainingPaymentsRouter);
 
 export default router;

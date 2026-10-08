@@ -5,6 +5,53 @@
  * SOMELEC Mission Management System API
  * OpenAPI spec version: 0.1.0
  */
+export interface RemainingPaymentSelection {
+  /**
+   * @minItems 1
+   * @maxItems 1000
+   */
+  missionIds: number[];
+  requestId: string;
+}
+
+export interface RemainingPaymentRow {
+  missionId: number;
+  missionNumber: string;
+  employeeId: number;
+  /** @nullable */
+  matricule: string | null;
+  /** @nullable */
+  nni: string | null;
+  firstName: string;
+  lastName: string;
+  amount: number;
+  month: number;
+  year: number;
+}
+
+export interface RemainingPaymentMission {
+  id: number;
+  missionNumber: string;
+  title: string;
+  startDate: string;
+  month: number;
+  year: number;
+  totalRemaining: number;
+  eligible: boolean;
+  /** @nullable */
+  ineligibilityReason: string | null;
+  rows: RemainingPaymentRow[];
+}
+
+export interface RemainingPaymentExport {
+  id: number;
+  createdAt: string;
+  createdByName: string;
+  missionCount: number;
+  employeeCount: number;
+  totalAmount: number;
+}
+
 export interface HealthStatus {
   status: string;
 }
@@ -307,6 +354,8 @@ export interface Mission {
   paidAmount?: number | null;
   /** @nullable */
   remainingAmount?: number | null;
+  /** @nullable */
+  fullyPaidAt?: string | null;
   durationDays: number;
   employeeCount: number;
   employees: MissionEmployeeSummary[];
