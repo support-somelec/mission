@@ -182,6 +182,7 @@ function MissionsTable({
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [missionNumber, setMissionNumber] = useState("");
 
   const [allPage, setAllPage] = useState(1);
   const [allSearch, setAllSearch] = useState("");
@@ -196,12 +197,14 @@ export default function Dashboard() {
     page: allPage,
     limit: PAGE_SIZE,
     search: allSearch || undefined,
+    missionNumber: missionNumber.trim() || undefined,
     status: allStatus !== "all" ? allStatus : undefined,
   });
 
   const { data: pendingData, isLoading: pendingLoading } = useGetPendingValidations({
     page: 1,
     limit: 200,
+    missionNumber: missionNumber.trim() || undefined,
   });
 
   const filteredPending = useMemo(() => {
@@ -259,6 +262,23 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         ))}
+      </div>
+
+      <div className="relative w-full max-w-sm">
+        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          placeholder="Rechercher un n° de mission…"
+          aria-label="Rechercher par numéro de mission"
+          className="pl-8"
+          value={missionNumber}
+          onChange={(event) => {
+            setMissionNumber(event.target.value);
+            setAllPage(1);
+            setPendingPage(1);
+          }}
+          data-testid="input-dashboard-mission-number"
+        />
       </div>
 
       {/* Tabs */}

@@ -7,6 +7,10 @@
  */
 
 export type ListMissionsParams = {
+  /**
+   * Recherche partielle par numéro d'ordre de mission ou référence interne
+   */
+  missionNumber?: string;
   page?: number;
   limit?: number;
   /**

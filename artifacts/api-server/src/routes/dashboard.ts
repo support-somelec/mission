@@ -6,6 +6,7 @@ import { requireAuth } from "../middlewares/session";
 import { calcDurationDays, calculateFees, type EmployeeCategory } from "../lib/fees";
 import { missionEmployeesTable } from "@workspace/db";
 import { type MissionStatus, type UserRole } from "../lib/mission-workflow";
+import { missionNumberFilter } from "../lib/mission-number-filter";
 
 const router: IRouter = Router();
 
@@ -164,7 +165,7 @@ router.get("/dashboard/pending-validations", requireAuth, async (req, res): Prom
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { page = 1, limit = 10 } = parsed.data;
+  const { page = 1, limit = 10, missionNumber } = parsed.data;
   const offset = (page - 1) * limit;
   const userRole = req.userRole! as UserRole;
 
@@ -179,6 +180,9 @@ router.get("/dashboard/pending-validations", requireAuth, async (req, res): Prom
     }
     condition = eq(missionsTable.status, myStatus as MissionStatus);
   }
+
+  const numberCondition = missionNumberFilter(missionNumber);
+  if (numberCondition) condition = and(condition, numberCondition)!;
 
   const [countResult] = await db
     .select({ count: sql<number>`count(*)::int` })

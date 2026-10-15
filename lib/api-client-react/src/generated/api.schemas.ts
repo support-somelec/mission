@@ -611,6 +611,10 @@ export type ListUsersParams = {
 };
 
 export type ListMissionsParams = {
+  /**
+   * Recherche partielle par numéro d'ordre de mission ou référence interne
+   */
+  missionNumber?: string;
   page?: number;
   limit?: number;
   /**
@@ -640,6 +644,10 @@ export type AddMissionEmployeeBody = {
 };
 
 export type GetPendingValidationsParams = {
+  /**
+   * Recherche partielle par numéro d'ordre de mission ou référence interne
+   */
+  missionNumber?: string;
   page?: number;
   limit?: number;
 };

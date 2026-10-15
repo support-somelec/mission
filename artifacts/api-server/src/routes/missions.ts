@@ -30,6 +30,7 @@ import {
   type UserRole,
 } from "../lib/mission-workflow";
 import { calculateFees, calcDurationDays, type EmployeeCategory } from "../lib/fees";
+import { missionNumberFilter } from "../lib/mission-number-filter";
 
 const router: IRouter = Router();
 
@@ -169,7 +170,7 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { page = 1, limit = 20, search, status, departmentId, startDateFrom, startDateTo } = parsed.data;
+  const { page = 1, limit = 20, search, status, departmentId, startDateFrom, startDateTo, missionNumber } = parsed.data;
   const offset = (page - 1) * limit;
   const userRole = req.userRole!;
   const userId = req.userId!;
@@ -201,6 +202,8 @@ router.get("/missions", requireAuth, async (req, res): Promise<void> => {
   if (search) {
     conditions.push(ilike(missionsTable.title, `%${search}%`));
   }
+  const numberCondition = missionNumberFilter(missionNumber);
+  if (numberCondition) conditions.push(numberCondition);
   if (status) {
     conditions.push(eq(missionsTable.status, status as MissionStatus));
   }

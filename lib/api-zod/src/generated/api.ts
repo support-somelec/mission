@@ -556,6 +556,12 @@ export const listMissionsQueryPageDefault = 1;
 export const listMissionsQueryLimitDefault = 20;
 
 export const ListMissionsQueryParams = zod.object({
+  missionNumber: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Recherche partielle par numéro d'ordre de mission ou référence interne",
+    ),
   page: zod.coerce.number().default(listMissionsQueryPageDefault),
   limit: zod.coerce.number().default(listMissionsQueryLimitDefault),
   search: zod.coerce.string().nullish(),
@@ -1213,6 +1219,12 @@ export const getPendingValidationsQueryPageDefault = 1;
 export const getPendingValidationsQueryLimitDefault = 10;
 
 export const GetPendingValidationsQueryParams = zod.object({
+  missionNumber: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "Recherche partielle par numéro d'ordre de mission ou référence interne",
+    ),
   page: zod.coerce.number().default(getPendingValidationsQueryPageDefault),
   limit: zod.coerce.number().default(getPendingValidationsQueryLimitDefault),
 });
