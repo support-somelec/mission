@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
@@ -47,6 +48,7 @@ export default function AdminRemainingPayments() {
   const qc = useQueryClient();
   const [month, setMonth] = useState("all");
   const [year, setYear] = useState("all");
+  const [missionSearch, setMissionSearch] = useState("");
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -58,8 +60,11 @@ export default function AdminRemainingPayments() {
 
   const years = useMemo(() => Array.from(new Set(missions.map((m) => m.year))).sort((a, b) => b - a), [missions]);
   const filtered = useMemo(
-    () => missions.filter((m) => (month === "all" || m.month === Number(month)) && (year === "all" || m.year === Number(year))),
-    [missions, month, year],
+    () => missions.filter((m) =>
+      m.missionNumber.toLowerCase().includes(missionSearch.trim().toLowerCase()) &&
+      (month === "all" || m.month === Number(month)) &&
+      (year === "all" || m.year === Number(year))),
+    [missions, missionSearch, month, year],
   );
   const filteredEligible = filtered.filter((m) => m.eligible);
   const allChecked = filteredEligible.length > 0 && filteredEligible.every((m) => selected.has(m.id));
@@ -139,6 +144,15 @@ export default function AdminRemainingPayments() {
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
             <CardTitle className="text-base">Missions en attente de règlement</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
+              <Input
+                type="search"
+                value={missionSearch}
+                onChange={(event) => setMissionSearch(event.target.value)}
+                placeholder="Rechercher un n° de mission…"
+                aria-label="Rechercher par numéro de mission"
+                className="w-full sm:w-[240px]"
+                data-testid="input-mission-number-search"
+              />
               <Select value={month} onValueChange={setMonth}>
                 <SelectTrigger className="w-[150px]" data-testid="select-month"><SelectValue placeholder="Mois" /></SelectTrigger>
                 <SelectContent>
